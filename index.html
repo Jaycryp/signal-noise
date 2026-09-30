@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal / Noise — Research before you interact.</title>
+<meta name="description" content="Check what a Web3 project claims against what it can show. Docs, code, team, token, sources.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============ FOUNDATION ============ */
+  :root {
+    --bg:       #0b0b0d;
+    --surface:  #121215;
+    --border:   #232329;
+    --text:     #e9e9ec;
+    --muted:    #9c9ca6;
+    --faint:    #6d6d77;
+    --accent:   #7ddda0;   /* signal green — used sparingly */
+    --noise:    #d9a05b;   /* muted amber */
+    --unknown:  #7a7a84;   /* neutral gray */
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ============ HEADER ============ */
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+  }
+
+  .logo .slash { color: var(--accent); }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  nav a {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    transition: color 0.15s;
+  }
+
+  nav a:hover { color: var(--text); }
+
+  .nav-soon {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--faint);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: default;
+  }
+
+  .soon-pill {
+    font-size: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  /* ============ HERO ============ */
+  .hero { padding: 96px 0 72px; }
+
+  .kicker {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 540px;
+    margin-bottom: 36px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 12px 22px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--text);
+    color: #0b0b0d;
+    border-color: var(--text);
+  }
+
+  .btn-primary:hover { background: #cfcfd6; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .btn-ghost:hover { border-color: var(--faint); }
+
+  /* ============ RESEARCH INPUT ============ */
+  .research { padding-bottom: 72px; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+  }
+
+  .panel-label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--faint);
+    margin-bottom: 14px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .research-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.88rem;
+    padding: 14px 16px;
+    transition: border-color 0.15s;
+  }
+
+  .research-input::placeholder { color: var(--faint); }
+
+  .research-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .engine-notice {
+    display: none;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--accent);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .engine-notice.visible { display: block; }
+
+  /* ============ EXAMPLE PREVIEW ============ */
+  .example { padding-bottom: 88px; }
+
+  .example-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .example-badge {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--noise);
+    border: 1px solid rgba(217, 160, 91, 0.3);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+
+  .example-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .example-title h2 {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  .example-title span {
+    font-size: 0.8rem;
+    color: var(--faint);
+  }
+
+  .findings-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .finding-col {
+    background: var(--surface);
+    padding: 22px;
+  }
+
+  .finding-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 16px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .dot-signal  { background: var(--accent); }
+  .dot-noise   { background: var(--noise); }
+  .dot-unknown { background: var(--unknown); }
+
+  .label-signal  { color: var(--accent); }
+  .label-noise   { color: var(--noise); }
+  .label-unknown { color: var(--unknown); }
+
+  .finding-col ul { list-style: none; }
+
+  .finding-col li {
+    font-size: 0.86rem;
+    color: var(--muted);
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .finding-col li:last-child { border-bottom: none; }
+
+  .marker {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    margin-right: 8px;
+  }
+
+  .marker-signal  { color: var(--accent); }
+  .marker-noise   { color: var(--noise); }
+  .marker-unknown { color: var(--unknown); }
+
+  /* ============ FOOTER ============ */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0 40px;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-inner p {
+    font-size: 0.8rem;
+    color: var(--faint);
+    max-width: 460px;
+  }
+
+  .footer-logo {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 720px) {
+    .hero { padding: 64px 0 56px; }
+    .input-row { flex-direction: column; }
+    .input-row .btn { width: 100%; text-align: center; }
+    .findings-grid { grid-template-columns: 1fr; }
+    nav { gap: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="container header-inner">
+    <div class="logo">
+      SIGNAL <span class="slash">/</span> NOISE
+    </div>
+    <nav>
+      <a href="#research">Research</a>
+      <span class="nav-soon">Projects <span class="soon-pill">soon</span></span>
+      <a href="#about">About</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <p class="kicker">Research before you interact.</p>
+    <h1>Look past the narrative.</h1>
+    <p class="subtitle">Check what a Web3 project claims against what it can show. Docs, code, team, token, sources.</p>
+    <div class="btn-row">
+      <a href="#research" class="btn btn-primary" id="startBtn">Start researching</a>
+      <a href="#example" class="btn btn-ghost">View example</a>
+    </div>
+  </section>
+
+  <!-- ============ RESEARCH INPUT ============ -->
+  <section class="research" id="research">
+    <div class="panel">
+      <p class="panel-label">Check a project</p>
+      <div class="input-row">
+        <input
+          type="text"
+          class="research-input"
+          id="researchInput"
+          placeholder="Paste a project website, docs URL, or project name..."
+          aria-label="Project URL or name"
+        >
+        <button class="btn btn-primary" id="analyzeBtn">Analyze</button>
+      </div>
+      <p class="engine-notice" id="engineNotice" role="status">
+        &gt; The research engine isn't built yet. It will be soon.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ EXAMPLE PREVIEW ============ -->
+  <section class="example" id="example">
+    <div class="example-header">
+      <p class="panel-label" style="margin-bottom:0;">What a report looks like</p>
+      <span class="example-badge">Example research — fictional data</span>
+    </div>
+
+    <div class="example-title">
+      <h2>Northstar</h2>
+      <span>layer-2 network</span>
+    </div>
+
+    <div class="findings-grid">
+
+      <div class="finding-col">
+        <p class="finding-label label-signal">
+          <span class="dot dot-signal"></span> Signal
+        </p>
+        <ul>
+          <li><span class="marker marker-signal">+</span>Public documentation</li>
+          <li><span class="marker marker-signal">+</span>GitHub repository</li>
+          <li><span class="marker marker-signal">+</span>Testnet available</li>
+        </ul>
+      </div>
+
+      <div class="finding-col">
+        <p class="finding-label label-noise">
+          <span class="dot dot-noise"></span> Noise
+        </p>
+        <ul>
+          <li><span class="marker marker-noise">!</span>Large user-count claim without a linked source</li>
+          <li><span class="marker marker-noise">!</span>Token information unclear</li>
+        </ul>
+      </div>
+
+      <div class="finding-col">
+        <p class="finding-label label-unknown">
+          <span class="dot dot-unknown"></span> Unknown
+        </p>
+        <ul>
+          <li><span class="marker marker-unknown">?</span>Team information</li>
+          <li><span class="marker marker-unknown">?</span>Token allocation</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer id="about">
+  <div class="container footer-inner">
+    <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
+    <span class="footer-logo">SIGNAL / NOISE</span>
+  </div>
+</footer>
+
+<script>
+  // Stage 1 behavior: the engine doesn't exist yet, so Analyze
+  // honestly says so instead of faking a result.
+  const input    = document.getElementById('researchInput');
+  const button   = document.getElementById('analyzeBtn');
+  const notice   = document.getElementById('engineNotice');
+  const startBtn = document.getElementById('startBtn');
+
+  function showComingNext() {
+    notice.classList.add('visible');
+  }
+
+  button.addEventListener('click', showComingNext);
+
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') showComingNext();
+  });
+
+  // "Start researching" scrolls to the input and puts the cursor in it.
+  startBtn.addEventListener('click', function () {
+    setTimeout(function () { input.focus(); }, 400);
+  });
+</script>
+
+</body>
+          </html>
