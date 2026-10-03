@@ -761,4 +761,92 @@ footer {
   .summary-count { font-size: 1.25rem; }
   .finding summary { padding: 14px 2px; }
 }
+/* ============ SOURCES (Stage 4) ============ */
 
+/* Source availability note inside each collapsed finding row.
+   Text-based, never color-only. */
+.finding-sources {
+  display: block;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  color: var(--faint);
+  margin-top: 5px;
+}
+
+.finding summary:hover .finding-sources {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+/* Source area inside an expanded finding. */
+.source-block {
+  display: block; /* overrides Stage 3 flex row */
+}
+
+.source-list {
+  list-style: none;
+  margin-top: 4px;
+}
+
+.source-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.source-entry { padding: 10px 0; }
+
+.source-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.source-meta {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--faint);
+  margin-top: 3px;
+  overflow-wrap: anywhere; /* long URLs never break layout */
+}
+
+/* Real link: only rendered when a URL exists. */
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-top: 8px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.source-link:hover {
+  border-color: var(--faint);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.source-link:active { transform: translateY(1px); }
+
+/* No-link state: subtle chip, not a button, not an error. */
+.source-chip {
+  display: inline-block;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--faint);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 5px 10px;
+  margin-top: 8px;
+}
+
+/* Unsourced finding state. Informational, not an error. */
+.source-none {
+  font-size: 0.84rem;
+  color: var(--faint);
+}
