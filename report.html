@@ -18,8 +18,8 @@
       SIGNAL <span class="slash">/</span> NOISE
     </a>
     <nav>
-      <a href="research.html" class="active" aria-current="page">Research</a>
-      <span class="nav-soon">Projects <span class="soon-pill">soon</span></span>
+      <a href="research.html">Research</a>
+      <a href="projects.html">Projects</a>
       <a href="index.html#about">About</a>
     </nav>
   </div>
@@ -31,7 +31,6 @@
 
   <p class="session-line" id="sessionLine" hidden></p>
 
-  <!-- Loading state: honest about being an example report. -->
   <p class="report-loading" id="reportLoading" role="status">
     &gt; Preparing example report…
   </p>
@@ -40,26 +39,28 @@
   <div id="reportContent" hidden aria-busy="true">
 
     <div class="report-head">
-      <span class="example-badge">Example report — fictional data</span>
-      <h1 id="reportTitle" tabindex="-1">Northstar</h1>
-      <p class="report-sub">Example research</p>
-      <p class="report-meta">Last checked · 03 Oct 2026</p>
+      <span class="example-badge" id="reportBadge">Example report — fictional data</span>
+      <div class="report-title-row">
+        <h1 id="reportTitle" tabindex="-1">Northstar</h1>
+        <button type="button" class="btn btn-secondary btn-compact" id="saveBtn">
+          Save research
+        </button>
+      </div>
+      <p class="report-sub" id="reportSub">Example research</p>
+      <p class="report-meta" id="reportMeta">Last checked · 03 Oct 2026</p>
     </div>
 
-    <p class="notice">
+    <p class="notice" id="reportNotice">
       &gt; Live research isn't connected yet. This example report uses fictional data to show how findings will be organized.
     </p>
 
-    <!-- Summary: counts are derived from the demo data, not hardcoded. -->
     <div class="summary-block">
-      <p class="panel-label">Findings in this example report</p>
+      <p class="panel-label" id="summaryLabel">Findings in this example report</p>
       <div class="summary-grid" id="summaryGrid" aria-label="Findings summary"></div>
     </div>
 
-    <!-- Filter -->
     <div class="filter-row" id="filterRow" role="group" aria-label="Filter findings"></div>
 
-    <!-- Sections rendered from data -->
     <div id="sections"></div>
 
   </div>
@@ -74,18 +75,13 @@
   </div>
 </footer>
 
+<script src="store.js"></script>
 <script>
   // ================================================
   // DEMO DATA
-  // This fixture is the ONLY source of report content.
-  // A later stage replaces this object with real
-  // research results. The rendering code below
-  // does not change when that happens.
-  //
-  // Each finding carries a sources array. A source may
-  // include: title, type, url, date, publisher.
-  // Only fields that exist are displayed. url: null
-  // means the source has no link — nothing is invented.
+  // Still the only built-in research content.
+  // Saved reports from localStorage use the exact
+  // same shape, so one renderer serves both.
   // ================================================
 
   const DEMO_REPORT = {
@@ -123,13 +119,7 @@
         gist: 'Northstar publishes technical documentation describing its system.',
         detail: 'A documentation site exists and is publicly readable in this demo dataset. The existence of documentation does not confirm that the system behaves as described.',
         sources: [
-          {
-            title: 'Demo documentation source',
-            type: 'Documentation',
-            url: null,
-            date: null,
-            publisher: 'Northstar (fictional)'
-          }
+          { title: 'Demo documentation source', type: 'Documentation', url: null, date: null, publisher: 'Northstar (fictional)' }
         ]
       },
       {
@@ -138,13 +128,7 @@
         gist: 'A public code repository is linked from the project documentation.',
         detail: 'A repository is reachable in this demo dataset. A public repository alone does not establish code quality, security, or that the published code matches any deployed system.',
         sources: [
-          {
-            title: 'Demo repository source',
-            type: 'GitHub',
-            url: null,
-            date: null,
-            publisher: 'Northstar (fictional)'
-          }
+          { title: 'Demo repository source', type: 'GitHub', url: null, date: null, publisher: 'Northstar (fictional)' }
         ]
       },
       {
@@ -153,20 +137,8 @@
         gist: 'A testnet is available and described in the documentation.',
         detail: 'Testnet access is described in this demo dataset. A working testnet does not confirm mainnet readiness or production security. Demonstrates the multi-source UI: two references support this finding.',
         sources: [
-          {
-            title: 'Demo testnet announcement',
-            type: 'Announcement',
-            url: null,
-            date: null,
-            publisher: 'Northstar (fictional)'
-          },
-          {
-            title: 'Signal / Noise repository',
-            type: 'GitHub',
-            url: 'https://github.com/Jaycryp/signal-noise',
-            date: null,
-            publisher: 'Demo link. This is the real repository of this tool, shown so the open-source link state can be seen. It is not Northstar evidence.'
-          }
+          { title: 'Demo testnet announcement', type: 'Announcement', url: null, date: null, publisher: 'Northstar (fictional)' },
+          { title: 'Signal / Noise repository', type: 'GitHub', url: 'https://github.com/Jaycryp/signal-noise', date: null, publisher: 'Demo link. This is the real repository of this tool, shown so the open-source link state can be seen. It is not Northstar evidence.' }
         ]
       },
       {
@@ -175,13 +147,7 @@
         gist: 'This claim appears in project materials without a linked source.',
         detail: 'The figure is repeated in promotional copy in this demo dataset, but no methodology or source is provided. Signal / Noise flags this for checking. It is not declared false.',
         sources: [
-          {
-            title: 'Project materials (demo)',
-            type: 'Other',
-            url: null,
-            date: null,
-            publisher: 'Origin of the claim, not evidence for it.'
-          }
+          { title: 'Project materials (demo)', type: 'Other', url: null, date: null, publisher: 'Origin of the claim, not evidence for it.' }
         ]
       },
       {
@@ -223,8 +189,11 @@
   };
 
   // ================================================
-  // RENDERING
-  // Everything below builds the UI from DEMO_REPORT.
+  // SESSION RESOLUTION
+  // Decides what this report shows:
+  //   ?saved=<id>    → saved report from localStorage
+  //   ?domain=<host> → demo report for that session
+  //   (nothing)      → demo report (example view)
   // ================================================
 
   function el(tag, className, text) {
@@ -238,20 +207,106 @@
   const contentEl   = document.getElementById('reportContent');
   const sessionLine = document.getElementById('sessionLine');
   const summaryGrid = document.getElementById('summaryGrid');
+  const summaryLabel = document.getElementById('summaryLabel');
   const filterRow   = document.getElementById('filterRow');
   const sectionsEl  = document.getElementById('sections');
 
-  // Session context passed from Stage 2 as ?domain=...
-  // Inserted with textContent only, never interpreted as HTML.
+  const badgeEl  = document.getElementById('reportBadge');
+  const titleEl  = document.getElementById('reportTitle');
+  const subEl    = document.getElementById('reportSub');
+  const metaEl   = document.getElementById('reportMeta');
+  const noticeEl = document.getElementById('reportNotice');
+  const saveBtn  = document.getElementById('saveBtn');
+
   const params = new URLSearchParams(window.location.search);
-  const domain = params.get('domain');
-  if (domain) {
-    sessionLine.textContent = 'Session started for: ' + domain;
+  const savedParam  = params.get('saved');
+  const domainParam = params.get('domain');
+
+  // The active report and its save identity.
+  let activeReport = DEMO_REPORT;
+  let saveId = 'demo:northstar';
+  let isSavedSession = false;
+
+  if (savedParam) {
+    const stored = SNStore.get(savedParam);
+    if (stored && stored.report) {
+      activeReport = stored.report;
+      saveId = stored.id;
+      isSavedSession = true;
+    } else {
+      // Saved entry missing or removed: fall back to demo, say so.
+      noticeEl.textContent = '> That saved research could not be found on this device. Showing the example report.';
+    }
+  } else if (domainParam) {
+    saveId = domainParam.trim().toLowerCase();
+  }
+
+  // Demo reports saved by the user are still demo data.
+  const isDemoData = activeReport === DEMO_REPORT;
+
+  if (isSavedSession) {
+    const name = activeReport.project && activeReport.project.name ? activeReport.project.name : saveId;
+    titleEl.textContent = name;
+    document.title = name + ' — Signal / Noise';
+    subEl.textContent = 'Saved research';
+    metaEl.textContent = 'Last checked · ' +
+      (activeReport.project && activeReport.project.lastChecked
+        ? activeReport.project.lastChecked
+        : 'unknown');
+    summaryLabel.textContent = 'Findings in this report';
+
+    if (isDemoData) {
+      badgeEl.hidden = false;
+      if (!noticeEl.textContent.startsWith('> That saved')) {
+        noticeEl.textContent = '> Saved example report. The underlying data is the fictional Northstar demo dataset.';
+      }
+    } else {
+      badgeEl.hidden = true;
+    }
+  }
+
+  if (domainParam) {
+    sessionLine.textContent = 'Session started for: ' + domainParam;
     sessionLine.hidden = false;
   }
 
+  // ================================================
+  // SAVE
+  // ================================================
+
+  function setSavedState() {
+    saveBtn.textContent = 'Saved ✓';
+    saveBtn.classList.add('is-saved');
+    saveBtn.setAttribute('aria-label', 'Research saved. Activate to save again.');
+  }
+
+  function setUnsavedState() {
+    saveBtn.textContent = 'Save research';
+    saveBtn.classList.remove('is-saved');
+    saveBtn.removeAttribute('aria-label');
+  }
+
+  if (SNStore.get(saveId)) setSavedState();
+
+  saveBtn.addEventListener('click', function () {
+    const url = isSavedSession
+      ? (SNStore.get(saveId) || {}).url || null
+      : (domainParam ? 'https://' + domainParam : null);
+
+    const saved = SNStore.save(saveId, activeReport, url);
+    if (saved) {
+      setSavedState();
+    } else {
+      saveBtn.textContent = 'Could not save';
+    }
+  });
+
+  // ================================================
+  // RENDERING (unchanged from Stage 4, data-driven)
+  // ================================================
+
   function countFor(key) {
-    return DEMO_REPORT.findings.filter(function (f) {
+    return activeReport.findings.filter(function (f) {
       return f.category === key;
     }).length;
   }
@@ -261,7 +316,7 @@
   }
 
   function renderSummary() {
-    DEMO_REPORT.categories.forEach(function (cat) {
+    activeReport.categories.forEach(function (cat) {
       const cell = el('div', 'summary-cell');
 
       const name = el('p', 'summary-name ' + cat.labelClass);
@@ -288,8 +343,8 @@
   }
 
   function renderFilters() {
-    filterRow.appendChild(makeFilterButton('all', 'All', DEMO_REPORT.findings.length));
-    DEMO_REPORT.categories.forEach(function (cat) {
+    filterRow.appendChild(makeFilterButton('all', 'All', activeReport.findings.length));
+    activeReport.categories.forEach(function (cat) {
       filterRow.appendChild(makeFilterButton(cat.key, cat.label, countFor(cat.key)));
     });
   }
@@ -303,7 +358,7 @@
     });
   }
 
-  // ---- Sources ------------------------------------
+  // ---- Sources ----
 
   function sourceCountText(sources) {
     if (!sources || sources.length === 0) return 'No supporting source';
@@ -314,19 +369,16 @@
   function buildSourceEntry(source) {
     const entry = el('div', 'source-entry');
 
-    // Title line, with publisher appended when present.
     let titleText = source.title;
     if (source.publisher) titleText += ' · ' + source.publisher;
     entry.appendChild(el('p', 'source-title', titleText));
 
-    // Metadata line: only fields that exist are shown.
     const metaParts = [];
     if (source.type) metaParts.push(source.type);
     if (source.date) metaParts.push(source.date);
     if (source.url) metaParts.push(source.url);
     entry.appendChild(el('p', 'source-meta', metaParts.join(' · ')));
 
-    // Action: real link only when a URL exists.
     if (source.url) {
       const open = document.createElement('a');
       open.className = 'source-link';
@@ -348,9 +400,7 @@
     block.appendChild(el('span', 'source-label', 'Sources'));
 
     if (!f.sources || f.sources.length === 0) {
-      block.appendChild(
-        el('p', 'source-none', 'No supporting source provided.')
-      );
+      block.appendChild(el('p', 'source-none', 'No supporting source provided.'));
       return block;
     }
 
@@ -364,7 +414,7 @@
     return block;
   }
 
-  // ---- Findings -----------------------------------
+  // ---- Findings ----
 
   function buildFinding(f) {
     const li = el('li');
@@ -393,7 +443,7 @@
   }
 
   function renderSections() {
-    DEMO_REPORT.categories.forEach(function (cat) {
+    activeReport.categories.forEach(function (cat) {
       const section = el('section', 'report-section');
       section.dataset.category = cat.key;
 
@@ -404,7 +454,7 @@
       const desc = el('p', 'section-desc', cat.description);
 
       const list = el('ul', 'finding-list');
-      DEMO_REPORT.findings
+      activeReport.findings
         .filter(function (f) { return f.category === cat.key; })
         .forEach(function (f) { list.appendChild(buildFinding(f)); });
 
@@ -415,8 +465,6 @@
     });
   }
 
-  // Brief workspace-style preparation state, then render.
-  // No external research is happening during this pause.
   setTimeout(function () {
     renderSummary();
     renderFilters();
@@ -426,7 +474,7 @@
     contentEl.hidden = false;
     contentEl.removeAttribute('aria-busy');
 
-    document.getElementById('reportTitle').focus();
+    titleEl.focus();
   }, 900);
 </script>
 
