@@ -77,29 +77,6 @@
 
   </div>
 
-  <!-- ============ SESSION VIEW (placeholder for Stage 3) ============ -->
-  <div id="sessionView" hidden>
-
-    <p class="panel-label">Research session</p>
-    <h2 class="session-domain" id="sessionHeading" tabindex="-1"></h2>
-    <p class="session-url" id="sessionUrl"></p>
-
-    <p class="notice">
-      &gt; The research engine isn't connected yet. Stage 3 will run these checks and sort findings into Signal, Noise, and Unknown.
-    </p>
-
-    <ul class="check-list">
-      <li><span>Documentation</span><span class="check-status">pending</span></li>
-      <li><span>Source code</span><span class="check-status">pending</span></li>
-      <li><span>Team</span><span class="check-status">pending</span></li>
-      <li><span>Token</span><span class="check-status">pending</span></li>
-      <li><span>Public claims</span><span class="check-status">pending</span></li>
-    </ul>
-
-    <button type="button" class="btn btn-ghost" id="resetBtn">Check another project</button>
-
-  </div>
-
 </main>
 
 <!-- ============ FOOTER ============ -->
@@ -111,16 +88,10 @@
 </footer>
 
 <script>
-  const form        = document.getElementById('researchForm');
-  const input       = document.getElementById('projectUrl');
-  const message     = document.getElementById('urlMessage');
-  const analyzeBtn  = document.getElementById('analyzeBtn');
-  const btnLabel    = analyzeBtn.textContent;
-  const formView    = document.getElementById('formView');
-  const sessionView = document.getElementById('sessionView');
-  const sessionHead = document.getElementById('sessionHeading');
-  const sessionUrl  = document.getElementById('sessionUrl');
-  const resetBtn    = document.getElementById('resetBtn');
+  const form       = document.getElementById('researchForm');
+  const input      = document.getElementById('projectUrl');
+  const message    = document.getElementById('urlMessage');
+  const analyzeBtn = document.getElementById('analyzeBtn');
 
   // Accepts "project.com", "https://project.com/docs", etc.
   // Rejects empty input, spaces, and anything without a dot in the host.
@@ -197,37 +168,13 @@
     analyzeBtn.textContent = 'Preparing research…';
     input.disabled = true;
 
-    // No engine exists yet. This pause represents where the real
-    // checks will run in Stage 3. Then we show the honest placeholder.
+    // Stage 3: route to the report workspace, passing the
+    // submitted domain as session context. The report itself
+    // is still demo data; no live research runs yet.
     setTimeout(function () {
-      openSession(url);
+      window.location.href = 'report.html?domain=' + encodeURIComponent(url.hostname);
     }, 1400);
   }
-
-  function openSession(url) {
-    sessionHead.textContent = url.hostname;
-    sessionUrl.textContent = url.href;
-
-    // Restore the button so the form is ready next time it's shown.
-    analyzeBtn.disabled = false;
-    analyzeBtn.textContent = btnLabel;
-    input.disabled = false;
-
-    formView.hidden = true;
-    sessionView.hidden = false;
-
-    // Move focus to the session heading so keyboard and screen
-    // reader users land on the new content instead of nowhere.
-    sessionHead.focus();
-  }
-
-  resetBtn.addEventListener('click', function () {
-    sessionView.hidden = true;
-    formView.hidden = false;
-    input.value = '';
-    clearState();
-    input.focus();
-  });
 </script>
 
 </body>
