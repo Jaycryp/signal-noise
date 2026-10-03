@@ -81,6 +81,11 @@
   // A later stage replaces this object with real
   // research results. The rendering code below
   // does not change when that happens.
+  //
+  // Each finding carries a sources array. A source may
+  // include: title, type, url, date, publisher.
+  // Only fields that exist are displayed. url: null
+  // means the source has no link — nothing is invented.
   // ================================================
 
   const DEMO_REPORT = {
@@ -117,63 +122,102 @@
         title: 'Technical documentation',
         gist: 'Northstar publishes technical documentation describing its system.',
         detail: 'A documentation site exists and is publicly readable in this demo dataset. The existence of documentation does not confirm that the system behaves as described.',
-        source: { label: 'Demo source', note: 'Placeholder. Not a real link.' }
+        sources: [
+          {
+            title: 'Demo documentation source',
+            type: 'Documentation',
+            url: null,
+            date: null,
+            publisher: 'Northstar (fictional)'
+          }
+        ]
       },
       {
         category: 'signal',
         title: 'Public code repository',
         gist: 'A public code repository is linked from the project documentation.',
         detail: 'A repository is reachable in this demo dataset. A public repository alone does not establish code quality, security, or that the published code matches any deployed system.',
-        source: { label: 'Demo source', note: 'Placeholder. Not a real link.' }
+        sources: [
+          {
+            title: 'Demo repository source',
+            type: 'GitHub',
+            url: null,
+            date: null,
+            publisher: 'Northstar (fictional)'
+          }
+        ]
       },
       {
         category: 'signal',
         title: 'Public testnet',
         gist: 'A testnet is available and described in the documentation.',
-        detail: 'Testnet access is described in this demo dataset. A working testnet does not confirm mainnet readiness or production security.',
-        source: { label: 'Demo source', note: 'Placeholder. Not a real link.' }
+        detail: 'Testnet access is described in this demo dataset. A working testnet does not confirm mainnet readiness or production security. Demonstrates the multi-source UI: two references support this finding.',
+        sources: [
+          {
+            title: 'Demo testnet announcement',
+            type: 'Announcement',
+            url: null,
+            date: null,
+            publisher: 'Northstar (fictional)'
+          },
+          {
+            title: 'Signal / Noise repository',
+            type: 'GitHub',
+            url: 'https://github.com/Jaycryp/signal-noise',
+            date: null,
+            publisher: 'Demo link. This is the real repository of this tool, shown so the open-source link state can be seen. It is not Northstar evidence.'
+          }
+        ]
       },
       {
         category: 'noise',
         title: '"Used by 50,000 developers"',
         gist: 'This claim appears in project materials without a linked source.',
         detail: 'The figure is repeated in promotional copy in this demo dataset, but no methodology or source is provided. Signal / Noise flags this for checking. It is not declared false.',
-        source: { label: 'Claim origin: project materials', note: 'Demo placeholder. Not a real link.' }
+        sources: [
+          {
+            title: 'Project materials (demo)',
+            type: 'Other',
+            url: null,
+            date: null,
+            publisher: 'Origin of the claim, not evidence for it.'
+          }
+        ]
       },
       {
         category: 'noise',
         title: 'Token information unclear',
         gist: 'Materials reference a token but do not establish supply, allocation, or contract details.',
-        detail: 'The token is mentioned without verifiable specifics in this demo dataset. This is flagged for investigation, not declared misleading.',
-        source: { label: 'Claim origin: project materials', note: 'Demo placeholder. Not a real link.' }
+        detail: 'The token is mentioned without verifiable specifics in this demo dataset. The materials that mention it are not included here. This is flagged for investigation, not declared misleading.',
+        sources: []
       },
       {
         category: 'unknown',
         title: 'Team information',
         gist: 'No reliable team information has been established in this demo research session.',
         detail: 'Unknown means not established in this research session. It does not mean the information does not exist.',
-        source: null
+        sources: []
       },
       {
         category: 'unknown',
         title: 'Token allocation',
         gist: 'No token allocation breakdown has been established in this demo research session.',
         detail: 'Allocation details may exist elsewhere. They were not established here.',
-        source: null
+        sources: []
       },
       {
         category: 'unknown',
         title: 'Security audits',
         gist: 'No audit reports have been established in this demo research session.',
         detail: 'Absence of an audit in this session is not proof that no audit exists.',
-        source: null
+        sources: []
       },
       {
         category: 'unknown',
         title: 'Funding and backers',
         gist: 'No funding or investor information has been established in this demo research session.',
         detail: 'This stays unestablished until sources establish it.',
-        source: null
+        sources: []
       }
     ]
   };
@@ -259,30 +303,68 @@
     });
   }
 
+  // ---- Sources ------------------------------------
+
+  function sourceCountText(sources) {
+    if (!sources || sources.length === 0) return 'No supporting source';
+    if (sources.length === 1) return '1 source';
+    return sources.length + ' sources';
+  }
+
+  function buildSourceEntry(source) {
+    const entry = el('div', 'source-entry');
+
+    // Title line, with publisher appended when present.
+    let titleText = source.title;
+    if (source.publisher) titleText += ' · ' + source.publisher;
+    entry.appendChild(el('p', 'source-title', titleText));
+
+    // Metadata line: only fields that exist are shown.
+    const metaParts = [];
+    if (source.type) metaParts.push(source.type);
+    if (source.date) metaParts.push(source.date);
+    if (source.url) metaParts.push(source.url);
+    entry.appendChild(el('p', 'source-meta', metaParts.join(' · ')));
+
+    // Action: real link only when a URL exists.
+    if (source.url) {
+      const open = document.createElement('a');
+      open.className = 'source-link';
+      open.href = source.url;
+      open.target = '_blank';
+      open.rel = 'noopener noreferrer';
+      open.setAttribute('aria-label', 'Open source in new tab: ' + source.title);
+      open.appendChild(document.createTextNode('Open source ↗'));
+      entry.appendChild(open);
+    } else {
+      entry.appendChild(el('span', 'source-chip', 'Demo source — no link available'));
+    }
+
+    return entry;
+  }
+
   function buildSourceBlock(f) {
     const block = el('div', 'source-block');
-    const info = el('div', 'source-info');
-    info.appendChild(el('span', 'source-label', 'Source'));
+    block.appendChild(el('span', 'source-label', 'Sources'));
 
-    if (f.source) {
-      info.appendChild(el('span', 'source-value', f.source.label + ' · ' + f.source.note));
-    } else {
-      info.appendChild(el('span', 'source-value', 'No sources established in this demo session.'));
-    }
-    block.appendChild(info);
-
-    // Disabled placeholder control. Becomes a real link
-    // when live research provides real URLs.
-    if (f.source) {
-      const open = el('button', 'source-open', 'Open source');
-      open.type = 'button';
-      open.disabled = true;
-      open.title = 'Sources open when live research is connected.';
-      block.appendChild(open);
+    if (!f.sources || f.sources.length === 0) {
+      block.appendChild(
+        el('p', 'source-none', 'No supporting source provided.')
+      );
+      return block;
     }
 
+    const list = el('ul', 'source-list');
+    f.sources.forEach(function (source) {
+      const li = document.createElement('li');
+      li.appendChild(buildSourceEntry(source));
+      list.appendChild(li);
+    });
+    block.appendChild(list);
     return block;
   }
+
+  // ---- Findings -----------------------------------
 
   function buildFinding(f) {
     const li = el('li');
@@ -292,8 +374,11 @@
     const main = el('span', 'finding-main');
     main.appendChild(el('span', 'finding-title', f.title));
     main.appendChild(el('span', 'finding-gist', f.gist));
+    main.appendChild(el('span', 'finding-sources', sourceCountText(f.sources)));
+
     const toggle = el('span', 'finding-toggle');
     toggle.setAttribute('aria-hidden', 'true');
+
     summary.appendChild(main);
     summary.appendChild(toggle);
 
@@ -346,4 +431,4 @@
 </script>
 
 </body>
-  </html>
+</html>
