@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Start a research session — Signal / Noise</title>
+<meta name="description" content="Enter a Web3 project URL to investigate.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="container header-inner">
+    <a href="index.html" class="logo">
+      SIGNAL <span class="slash">/</span> NOISE
+    </a>
+    <nav>
+      <a href="research.html" class="active" aria-current="page">Research</a>
+      <span class="nav-soon">Projects <span class="soon-pill">soon</span></span>
+      <a href="index.html#about">About</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container-narrow">
+
+  <a href="index.html" class="back-link">← Back</a>
+
+  <!-- ============ FORM VIEW ============ -->
+  <div id="formView">
+
+    <div class="session-hero">
+      <h1>Start a research session</h1>
+      <p class="lede">Enter a project to investigate. Signal / Noise will organize available information into signals, claims that need checking, and unknowns.</p>
+    </div>
+
+    <form id="researchForm">
+      <label class="panel-label" for="projectUrl">Project URL</label>
+      <div class="input-row">
+        <input
+          type="text"
+          class="research-input"
+          id="projectUrl"
+          name="projectUrl"
+          placeholder="https://project.com"
+          inputmode="url"
+          autocomplete="off"
+          spellcheck="false"
+          aria-describedby="urlMessage"
+        >
+        <button type="submit" class="btn btn-primary" id="analyzeBtn">Analyze project →</button>
+      </div>
+      <p class="field-message" id="urlMessage" aria-live="polite"></p>
+    </form>
+
+    <!-- Category definitions: product documentation, not results. -->
+    <section class="categories">
+      <h2 class="panel-label">How findings are classified</h2>
+      <ul class="category-rows">
+        <li>
+          <span class="cat-term label-signal"><span class="dot dot-signal"></span>Signal</span>
+          <span class="cat-def">Information supported by available sources.</span>
+        </li>
+        <li>
+          <span class="cat-term label-noise"><span class="dot dot-noise"></span>Noise</span>
+          <span class="cat-def">Claims or statements that need further checking.</span>
+        </li>
+        <li>
+          <span class="cat-term label-unknown"><span class="dot dot-unknown"></span>Unknown</span>
+          <span class="cat-def">Information that has not been established.</span>
+        </li>
+      </ul>
+    </section>
+
+  </div>
+
+  <!-- ============ SESSION VIEW (placeholder for Stage 3) ============ -->
+  <div id="sessionView" hidden>
+
+    <p class="panel-label">Research session</p>
+    <h2 class="session-domain" id="sessionHeading" tabindex="-1"></h2>
+    <p class="session-url" id="sessionUrl"></p>
+
+    <p class="notice">
+      &gt; The research engine isn't connected yet. Stage 3 will run these checks and sort findings into Signal, Noise, and Unknown.
+    </p>
+
+    <ul class="check-list">
+      <li><span>Documentation</span><span class="check-status">pending</span></li>
+      <li><span>Source code</span><span class="check-status">pending</span></li>
+      <li><span>Team</span><span class="check-status">pending</span></li>
+      <li><span>Token</span><span class="check-status">pending</span></li>
+      <li><span>Public claims</span><span class="check-status">pending</span></li>
+    </ul>
+
+    <button type="button" class="btn btn-ghost" id="resetBtn">Check another project</button>
+
+  </div>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container footer-inner">
+    <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
+    <span class="footer-logo">SIGNAL / NOISE</span>
+  </div>
+</footer>
+
+<script>
+  const form        = document.getElementById('researchForm');
+  const input       = document.getElementById('projectUrl');
+  const message     = document.getElementById('urlMessage');
+  const analyzeBtn  = document.getElementById('analyzeBtn');
+  const btnLabel    = analyzeBtn.textContent;
+  const formView    = document.getElementById('formView');
+  const sessionView = document.getElementById('sessionView');
+  const sessionHead = document.getElementById('sessionHeading');
+  const sessionUrl  = document.getElementById('sessionUrl');
+  const resetBtn    = document.getElementById('resetBtn');
+
+  // Accepts "project.com", "https://project.com/docs", etc.
+  // Rejects empty input, spaces, and anything without a dot in the host.
+  function parseProjectUrl(value) {
+    const raw = value.trim();
+    if (!raw) return { ok: false, reason: 'empty' };
+    if (/\s/.test(raw)) return { ok: false, reason: 'invalid' };
+
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+
+    let url;
+    try {
+      url = new URL(withProtocol);
+    } catch (error) {
+      return { ok: false, reason: 'invalid' };
+    }
+
+    if (!url.hostname.includes('.')) return { ok: false, reason: 'invalid' };
+    return { ok: true, url: url };
+  }
+
+  // The marker symbol means the state never relies on color alone.
+  function showError(text) {
+    message.textContent = '! ' + text;
+    message.className = 'field-message error';
+    input.classList.add('invalid');
+    input.classList.remove('valid');
+    input.setAttribute('aria-invalid', 'true');
+  }
+
+  function showValid(domain) {
+    message.textContent = '> Will check: ' + domain;
+    message.className = 'field-message ok';
+    input.classList.remove('invalid');
+    input.classList.add('valid');
+    input.setAttribute('aria-invalid', 'false');
+  }
+
+  function clearState() {
+    message.textContent = '';
+    message.className = 'field-message';
+    input.classList.remove('invalid', 'valid');
+    input.setAttribute('aria-invalid', 'false');
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    const result = parseProjectUrl(input.value);
+
+    if (!result.ok) {
+      if (result.reason === 'empty') {
+        showError('Enter a project URL.');
+      } else {
+        showError("That doesn't look like a URL. Example: https://project.com");
+      }
+      input.focus();
+      return;
+    }
+
+    showValid(result.url.hostname);
+    startLoading(result.url);
+  });
+
+  // Live revalidation, but only while an error is on screen.
+  // We don't nag people during their first attempt.
+  input.addEventListener('input', function () {
+    if (!input.classList.contains('invalid')) return;
+    const result = parseProjectUrl(input.value);
+    if (result.ok) showValid(result.url.hostname);
+  });
+
+  function startLoading(url) {
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = 'Preparing research…';
+    input.disabled = true;
+
+    // No engine exists yet. This pause represents where the real
+    // checks will run in Stage 3. Then we show the honest placeholder.
+    setTimeout(function () {
+      openSession(url);
+    }, 1400);
+  }
+
+  function openSession(url) {
+    sessionHead.textContent = url.hostname;
+    sessionUrl.textContent = url.href;
+
+    // Restore the button so the form is ready next time it's shown.
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = btnLabel;
+    input.disabled = false;
+
+    formView.hidden = true;
+    sessionView.hidden = false;
+
+    // Move focus to the session heading so keyboard and screen
+    // reader users land on the new content instead of nowhere.
+    sessionHead.focus();
+  }
+
+  resetBtn.addEventListener('click', function () {
+    sessionView.hidden = true;
+    formView.hidden = false;
+    input.value = '';
+    clearState();
+    input.focus();
+  });
+</script>
+
+</body>
+</html>
