@@ -850,3 +850,190 @@ footer {
   font-size: 0.84rem;
   color: var(--faint);
 }
+/* ============ SAVED RESEARCH (Stage 5) ============ */
+
+/* Compact button size, used on report + library rows. */
+.btn-compact {
+  padding: 8px 16px;
+  font-size: 0.8rem;
+}
+
+/* Quiet text-button for destructive actions in rows. */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--faint);
+}
+
+.btn-ghost:hover {
+  color: var(--noise);
+  border-color: var(--border);
+}
+
+/* Solid destructive button, used in the confirm dialog. */
+.btn-danger {
+  background: transparent;
+  border: 1px solid var(--noise);
+  color: var(--noise);
+}
+
+.btn-danger:hover {
+  background: var(--noise);
+  color: var(--bg);
+}
+
+/* Saved button state: text + checkmark, not color alone. */
+.btn.is-saved {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+/* Report title row with save action. */
+.report-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 18px 0 6px;
+}
+
+.report-title-row h1 { margin: 0; }
+
+/* ---- Library page ---- */
+
+.projects-head { margin-bottom: 36px; }
+
+.projects-head h1 {
+  font-size: clamp(1.4rem, 2.5vw, 1.7rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.projects-sub {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.saved-list {
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+
+.saved-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  padding: 20px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.saved-main { min-width: 0; flex: 1 1 280px; }
+
+.saved-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.saved-id {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--faint);
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.saved-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 10px;
+}
+
+.saved-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.saved-date {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--faint);
+  margin-top: 8px;
+}
+
+.saved-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ---- Empty state ---- */
+
+.empty-block {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.empty-desc {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+/* ---- Delete confirmation ---- */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.66);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
+
+.confirm-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.confirm-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.confirm-desc {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-bottom: 20px;
+  overflow-wrap: anywhere;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+    }
