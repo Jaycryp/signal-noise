@@ -1,482 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Example report — Signal / Noise</title>
-<meta name="description" content="Example Signal / Noise research report. Fictional demo data.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report — Signal / Noise</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body data-page="report">
 
-<!-- ============ HEADER ============ -->
-<header>
-  <div class="container header-inner">
-    <a href="index.html" class="logo">
-      SIGNAL <span class="slash">/</span> NOISE
-    </a>
-    <nav>
-      <a href="research.html">Research</a>
-      <a href="projects.html">Projects</a>
-      <a href="index.html#about">About</a>
-    </nav>
-  </div>
-</header>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Signal <span>/</span> Noise</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="site-nav" id="siteNav">
+        <a href="research.html" data-nav="research">Research</a>
+        <a href="projects.html" data-nav="projects">Projects</a>
+      </nav>
+    </div>
+  </header>
 
-<main class="container-report">
+  <main class="container report-page">
 
-  <a href="research.html" class="back-link">← Back to research</a>
+    <!-- Loading state: accurately describes what is happening -->
+    <div class="report-loading" id="reportLoading" hidden>
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p id="loadingMessage">Retrieving public repository data…</p>
+    </div>
 
-  <p class="session-line" id="sessionLine" hidden></p>
+    <!-- Human-readable error state; never raw API errors -->
+    <div class="report-error" id="reportError" hidden>
+      <h2 id="errorTitle">Couldn't retrieve repository data</h2>
+      <p id="errorMessage"></p>
+      <a class="btn btn-primary" href="research.html">Back to research</a>
+    </div>
 
-  <p class="report-loading" id="reportLoading" role="status">
-    &gt; Preparing example report…
-  </p>
+    <!-- Report -->
+    <div id="reportMain" hidden>
 
-  <!-- ============ REPORT ============ -->
-  <div id="reportContent" hidden aria-busy="true">
-
-    <div class="report-head">
-      <span class="example-badge" id="reportBadge">Example report — fictional data</span>
-      <div class="report-title-row">
-        <h1 id="reportTitle" tabindex="-1">Northstar</h1>
-        <button type="button" class="btn btn-secondary btn-compact" id="saveBtn">
-          Save research
-        </button>
+      <div class="demo-banner" id="demoBanner" hidden>
+        Demo research — fictional Northstar dataset. This is not live source data and cannot be saved to your library.
       </div>
-      <p class="report-sub" id="reportSub">Example research</p>
-      <p class="report-meta" id="reportMeta">Last checked · 03 Oct 2026</p>
+
+      <header class="report-header">
+        <div class="report-title-row">
+          <div class="report-title-main">
+            <h1 id="projectName"></h1>
+            <a class="report-url" id="projectUrl" href="#" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+          <button class="btn btn-secondary" id="saveBtn" type="button">Save research</button>
+        </div>
+        <p class="report-subline">
+          <span class="src-chip" id="sourceTypeChip"></span>
+          <span id="reportSubline"></span>
+        </p>
+        <p class="save-note" id="saveNote" hidden></p>
+      </header>
+
+      <section class="meta-section" id="metaSection" hidden>
+        <h2>Repository metadata</h2>
+        <dl class="repo-meta" id="repoMeta"></dl>
+      </section>
+
+      <section class="findings-grid">
+        <div class="findings-col">
+          <h2>Signal <span class="count" id="signalCount">00</span></h2>
+          <div class="findings-list" id="signalList"></div>
+        </div>
+        <div class="findings-col">
+          <h2>Noise <span class="count" id="noiseCount">00</span></h2>
+          <div class="findings-list" id="noiseList"></div>
+        </div>
+        <div class="findings-col">
+          <h2>Unknown <span class="count" id="unknownCount">00</span></h2>
+          <div class="findings-list" id="unknownList"></div>
+        </div>
+      </section>
+
+      <section class="sources-section">
+        <h2>Sources</h2>
+        <div class="source-grid" id="sourceList"></div>
+      </section>
+
     </div>
+  </main>
 
-    <p class="notice" id="reportNotice">
-      &gt; Live research isn't connected yet. This example report uses fictional data to show how findings will be organized.
-    </p>
-
-    <div class="summary-block">
-      <p class="panel-label" id="summaryLabel">Findings in this example report</p>
-      <div class="summary-grid" id="summaryGrid" aria-label="Findings summary"></div>
-    </div>
-
-    <div class="filter-row" id="filterRow" role="group" aria-label="Filter findings"></div>
-
-    <div id="sections"></div>
-
-  </div>
-
-</main>
-
-<!-- ============ FOOTER ============ -->
-<footer>
-  <div class="container footer-inner">
-    <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
-    <span class="footer-logo">SIGNAL / NOISE</span>
-  </div>
-</footer>
-
-<script src="store.js"></script>
-<script>
-  // ================================================
-  // DEMO DATA
-  // Still the only built-in research content.
-  // Saved reports from localStorage use the exact
-  // same shape, so one renderer serves both.
-  // ================================================
-
-  const DEMO_REPORT = {
-    project: {
-      name: 'Northstar',
-      lastChecked: '03 Oct 2026'
-    },
-    categories: [
-      {
-        key: 'signal',
-        label: 'Signal',
-        dotClass: 'dot-signal',
-        labelClass: 'label-signal',
-        description: 'Information supported by available sources.'
-      },
-      {
-        key: 'noise',
-        label: 'Noise',
-        dotClass: 'dot-noise',
-        labelClass: 'label-noise',
-        description: 'Claims or statements that need further checking.'
-      },
-      {
-        key: 'unknown',
-        label: 'Unknown',
-        dotClass: 'dot-unknown',
-        labelClass: 'label-unknown',
-        description: 'Information that has not been established in this research session.'
-      }
-    ],
-    findings: [
-      {
-        category: 'signal',
-        title: 'Technical documentation',
-        gist: 'Northstar publishes technical documentation describing its system.',
-        detail: 'A documentation site exists and is publicly readable in this demo dataset. The existence of documentation does not confirm that the system behaves as described.',
-        sources: [
-          { title: 'Demo documentation source', type: 'Documentation', url: null, date: null, publisher: 'Northstar (fictional)' }
-        ]
-      },
-      {
-        category: 'signal',
-        title: 'Public code repository',
-        gist: 'A public code repository is linked from the project documentation.',
-        detail: 'A repository is reachable in this demo dataset. A public repository alone does not establish code quality, security, or that the published code matches any deployed system.',
-        sources: [
-          { title: 'Demo repository source', type: 'GitHub', url: null, date: null, publisher: 'Northstar (fictional)' }
-        ]
-      },
-      {
-        category: 'signal',
-        title: 'Public testnet',
-        gist: 'A testnet is available and described in the documentation.',
-        detail: 'Testnet access is described in this demo dataset. A working testnet does not confirm mainnet readiness or production security. Demonstrates the multi-source UI: two references support this finding.',
-        sources: [
-          { title: 'Demo testnet announcement', type: 'Announcement', url: null, date: null, publisher: 'Northstar (fictional)' },
-          { title: 'Signal / Noise repository', type: 'GitHub', url: 'https://github.com/Jaycryp/signal-noise', date: null, publisher: 'Demo link. This is the real repository of this tool, shown so the open-source link state can be seen. It is not Northstar evidence.' }
-        ]
-      },
-      {
-        category: 'noise',
-        title: '"Used by 50,000 developers"',
-        gist: 'This claim appears in project materials without a linked source.',
-        detail: 'The figure is repeated in promotional copy in this demo dataset, but no methodology or source is provided. Signal / Noise flags this for checking. It is not declared false.',
-        sources: [
-          { title: 'Project materials (demo)', type: 'Other', url: null, date: null, publisher: 'Origin of the claim, not evidence for it.' }
-        ]
-      },
-      {
-        category: 'noise',
-        title: 'Token information unclear',
-        gist: 'Materials reference a token but do not establish supply, allocation, or contract details.',
-        detail: 'The token is mentioned without verifiable specifics in this demo dataset. The materials that mention it are not included here. This is flagged for investigation, not declared misleading.',
-        sources: []
-      },
-      {
-        category: 'unknown',
-        title: 'Team information',
-        gist: 'No reliable team information has been established in this demo research session.',
-        detail: 'Unknown means not established in this research session. It does not mean the information does not exist.',
-        sources: []
-      },
-      {
-        category: 'unknown',
-        title: 'Token allocation',
-        gist: 'No token allocation breakdown has been established in this demo research session.',
-        detail: 'Allocation details may exist elsewhere. They were not established here.',
-        sources: []
-      },
-      {
-        category: 'unknown',
-        title: 'Security audits',
-        gist: 'No audit reports have been established in this demo research session.',
-        detail: 'Absence of an audit in this session is not proof that no audit exists.',
-        sources: []
-      },
-      {
-        category: 'unknown',
-        title: 'Funding and backers',
-        gist: 'No funding or investor information has been established in this demo research session.',
-        detail: 'This stays unestablished until sources establish it.',
-        sources: []
-      }
-    ]
-  };
-
-  // ================================================
-  // SESSION RESOLUTION
-  // Decides what this report shows:
-  //   ?saved=<id>    → saved report from localStorage
-  //   ?domain=<host> → demo report for that session
-  //   (nothing)      → demo report (example view)
-  // ================================================
-
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
-  }
-
-  const loadingEl   = document.getElementById('reportLoading');
-  const contentEl   = document.getElementById('reportContent');
-  const sessionLine = document.getElementById('sessionLine');
-  const summaryGrid = document.getElementById('summaryGrid');
-  const summaryLabel = document.getElementById('summaryLabel');
-  const filterRow   = document.getElementById('filterRow');
-  const sectionsEl  = document.getElementById('sections');
-
-  const badgeEl  = document.getElementById('reportBadge');
-  const titleEl  = document.getElementById('reportTitle');
-  const subEl    = document.getElementById('reportSub');
-  const metaEl   = document.getElementById('reportMeta');
-  const noticeEl = document.getElementById('reportNotice');
-  const saveBtn  = document.getElementById('saveBtn');
-
-  const params = new URLSearchParams(window.location.search);
-  const savedParam  = params.get('saved');
-  const domainParam = params.get('domain');
-
-  // The active report and its save identity.
-  let activeReport = DEMO_REPORT;
-  let saveId = 'demo:northstar';
-  let isSavedSession = false;
-
-  if (savedParam) {
-    const stored = SNStore.get(savedParam);
-    if (stored && stored.report) {
-      activeReport = stored.report;
-      saveId = stored.id;
-      isSavedSession = true;
-    } else {
-      // Saved entry missing or removed: fall back to demo, say so.
-      noticeEl.textContent = '> That saved research could not be found on this device. Showing the example report.';
-    }
-  } else if (domainParam) {
-    saveId = domainParam.trim().toLowerCase();
-  }
-
-  // Demo reports saved by the user are still demo data.
-  const isDemoData = activeReport === DEMO_REPORT;
-
-  if (isSavedSession) {
-    const name = activeReport.project && activeReport.project.name ? activeReport.project.name : saveId;
-    titleEl.textContent = name;
-    document.title = name + ' — Signal / Noise';
-    subEl.textContent = 'Saved research';
-    metaEl.textContent = 'Last checked · ' +
-      (activeReport.project && activeReport.project.lastChecked
-        ? activeReport.project.lastChecked
-        : 'unknown');
-    summaryLabel.textContent = 'Findings in this report';
-
-    if (isDemoData) {
-      badgeEl.hidden = false;
-      if (!noticeEl.textContent.startsWith('> That saved')) {
-        noticeEl.textContent = '> Saved example report. The underlying data is the fictional Northstar demo dataset.';
-      }
-    } else {
-      badgeEl.hidden = true;
-    }
-  }
-
-  if (domainParam) {
-    sessionLine.textContent = 'Session started for: ' + domainParam;
-    sessionLine.hidden = false;
-  }
-
-  // ================================================
-  // SAVE
-  // ================================================
-
-  function setSavedState() {
-    saveBtn.textContent = 'Saved ✓';
-    saveBtn.classList.add('is-saved');
-    saveBtn.setAttribute('aria-label', 'Research saved. Activate to save again.');
-  }
-
-  function setUnsavedState() {
-    saveBtn.textContent = 'Save research';
-    saveBtn.classList.remove('is-saved');
-    saveBtn.removeAttribute('aria-label');
-  }
-
-  if (SNStore.get(saveId)) setSavedState();
-
-  saveBtn.addEventListener('click', function () {
-    const url = isSavedSession
-      ? (SNStore.get(saveId) || {}).url || null
-      : (domainParam ? 'https://' + domainParam : null);
-
-    const saved = SNStore.save(saveId, activeReport, url);
-    if (saved) {
-      setSavedState();
-    } else {
-      saveBtn.textContent = 'Could not save';
-    }
-  });
-
-  // ================================================
-  // RENDERING (unchanged from Stage 4, data-driven)
-  // ================================================
-
-  function countFor(key) {
-    return activeReport.findings.filter(function (f) {
-      return f.category === key;
-    }).length;
-  }
-
-  function pad2(n) {
-    return String(n).padStart(2, '0');
-  }
-
-  function renderSummary() {
-    activeReport.categories.forEach(function (cat) {
-      const cell = el('div', 'summary-cell');
-
-      const name = el('p', 'summary-name ' + cat.labelClass);
-      name.appendChild(el('span', 'dot ' + cat.dotClass));
-      name.appendChild(document.createTextNode(cat.label));
-
-      const count = el('p', 'summary-count', pad2(countFor(cat.key)));
-
-      cell.appendChild(name);
-      cell.appendChild(count);
-      summaryGrid.appendChild(cell);
-    });
-  }
-
-  function makeFilterButton(key, label, count) {
-    const btn = el('button', 'filter-btn');
-    btn.type = 'button';
-    btn.dataset.filter = key;
-    btn.setAttribute('aria-pressed', key === 'all' ? 'true' : 'false');
-    btn.appendChild(document.createTextNode(label));
-    btn.appendChild(el('span', 'filter-count', pad2(count)));
-    btn.addEventListener('click', function () { applyFilter(key); });
-    return btn;
-  }
-
-  function renderFilters() {
-    filterRow.appendChild(makeFilterButton('all', 'All', activeReport.findings.length));
-    activeReport.categories.forEach(function (cat) {
-      filterRow.appendChild(makeFilterButton(cat.key, cat.label, countFor(cat.key)));
-    });
-  }
-
-  function applyFilter(key) {
-    document.querySelectorAll('.filter-btn').forEach(function (b) {
-      b.setAttribute('aria-pressed', b.dataset.filter === key ? 'true' : 'false');
-    });
-    document.querySelectorAll('.report-section').forEach(function (section) {
-      section.hidden = (key !== 'all' && section.dataset.category !== key);
-    });
-  }
-
-  // ---- Sources ----
-
-  function sourceCountText(sources) {
-    if (!sources || sources.length === 0) return 'No supporting source';
-    if (sources.length === 1) return '1 source';
-    return sources.length + ' sources';
-  }
-
-  function buildSourceEntry(source) {
-    const entry = el('div', 'source-entry');
-
-    let titleText = source.title;
-    if (source.publisher) titleText += ' · ' + source.publisher;
-    entry.appendChild(el('p', 'source-title', titleText));
-
-    const metaParts = [];
-    if (source.type) metaParts.push(source.type);
-    if (source.date) metaParts.push(source.date);
-    if (source.url) metaParts.push(source.url);
-    entry.appendChild(el('p', 'source-meta', metaParts.join(' · ')));
-
-    if (source.url) {
-      const open = document.createElement('a');
-      open.className = 'source-link';
-      open.href = source.url;
-      open.target = '_blank';
-      open.rel = 'noopener noreferrer';
-      open.setAttribute('aria-label', 'Open source in new tab: ' + source.title);
-      open.appendChild(document.createTextNode('Open source ↗'));
-      entry.appendChild(open);
-    } else {
-      entry.appendChild(el('span', 'source-chip', 'Demo source — no link available'));
-    }
-
-    return entry;
-  }
-
-  function buildSourceBlock(f) {
-    const block = el('div', 'source-block');
-    block.appendChild(el('span', 'source-label', 'Sources'));
-
-    if (!f.sources || f.sources.length === 0) {
-      block.appendChild(el('p', 'source-none', 'No supporting source provided.'));
-      return block;
-    }
-
-    const list = el('ul', 'source-list');
-    f.sources.forEach(function (source) {
-      const li = document.createElement('li');
-      li.appendChild(buildSourceEntry(source));
-      list.appendChild(li);
-    });
-    block.appendChild(list);
-    return block;
-  }
-
-  // ---- Findings ----
-
-  function buildFinding(f) {
-    const li = el('li');
-    const details = el('details', 'finding');
-
-    const summary = document.createElement('summary');
-    const main = el('span', 'finding-main');
-    main.appendChild(el('span', 'finding-title', f.title));
-    main.appendChild(el('span', 'finding-gist', f.gist));
-    main.appendChild(el('span', 'finding-sources', sourceCountText(f.sources)));
-
-    const toggle = el('span', 'finding-toggle');
-    toggle.setAttribute('aria-hidden', 'true');
-
-    summary.appendChild(main);
-    summary.appendChild(toggle);
-
-    const body = el('div', 'finding-body');
-    body.appendChild(el('p', null, f.detail));
-    body.appendChild(buildSourceBlock(f));
-
-    details.appendChild(summary);
-    details.appendChild(body);
-    li.appendChild(details);
-    return li;
-  }
-
-  function renderSections() {
-    activeReport.categories.forEach(function (cat) {
-      const section = el('section', 'report-section');
-      section.dataset.category = cat.key;
-
-      const title = el('h2', 'section-title ' + cat.labelClass);
-      title.appendChild(el('span', 'dot ' + cat.dotClass));
-      title.appendChild(document.createTextNode(cat.label));
-
-      const desc = el('p', 'section-desc', cat.description);
-
-      const list = el('ul', 'finding-list');
-      activeReport.findings
-        .filter(function (f) { return f.category === cat.key; })
-        .forEach(function (f) { list.appendChild(buildFinding(f)); });
-
-      section.appendChild(title);
-      section.appendChild(desc);
-      section.appendChild(list);
-      sectionsEl.appendChild(section);
-    });
-  }
-
-  setTimeout(function () {
-    renderSummary();
-    renderFilters();
-    renderSections();
-
-    loadingEl.hidden = true;
-    contentEl.hidden = false;
-    contentEl.removeAttribute('aria-busy');
-
-    titleEl.focus();
-  }, 900);
-</script>
-
+  <script src="sources.js"></script>
+  <script src="store.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
