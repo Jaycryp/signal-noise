@@ -1037,3 +1037,32 @@ footer {
   justify-content: flex-end;
   gap: 10px;
     }
+/* ===== Stage 5 hotfix: visible button states ===== */
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--faint);
+  color: var(--accent);
+}
+
+#saveBtn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+#saveBtn:hover {
+  border-color: var(--faint);
+  color: var(--accent);
+}
+
+#saveBtn.is-saved {
+  background: transparent;
+  color: var(--signal);
+  border-color: var(--signal);
+}
