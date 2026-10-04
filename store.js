@@ -1,112 +1,98 @@
-// ================================================
-// Signal / Noise — local storage module
-// Shared by report.html and projects.html.
-//
-// All saved research lives under one key:
-//   "signal-noise.research.v1"
-// Shape: { version: 1, items: [ ...savedReports ] }
-//
-// Each item mirrors the report data model:
-//   { id, url, savedAt, report: { project, categories, findings } }
-//
-// Every read is guarded: malformed or missing data
-// returns an empty store instead of crashing.
-// ================================================
+/* ============================================================
+   Signal / Noise — store.js
+   Saved research library (localStorage).
+   Stage 6: stores full research objects with provenance.
+   ============================================================ */
 
-const SNStore = (function () {
-  const KEY = 'signal-noise.research.v1';
-  const VERSION = 1;
+(function () {
+  'use strict';
 
-  function emptyStore() {
-    return { version: VERSION, items: [] };
-  }
+  var KEY = 'sn.projects.v1';
 
-  function read() {
-    let raw;
+  function readAll() {
     try {
-      raw = window.localStorage.getItem(KEY);
-    } catch (e) {
-      return emptyStore();
-    }
-    if (!raw) return emptyStore();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      return emptyStore();
-    }
-
-    if (!parsed || !Array.isArray(parsed.items)) return emptyStore();
-    return parsed;
+      var raw = localStorage.getItem(KEY);
+      var v = raw ? JSON.parse(raw) : [];
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
   }
 
-  function write(store) {
-    try {
-      window.localStorage.setItem(KEY, JSON.stringify(store));
-      return true;
-    } catch (e) {
-      return false; // storage full or unavailable
-    }
+  function writeAll(list) {
+    localStorage.setItem(KEY, JSON.stringify(list));
   }
 
-  function normalizeId(idOrUrl) {
-    return String(idOrUrl || '').trim().toLowerCase();
+  function makeId() {
+    return 'r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
   }
 
-  function list() {
-    // Newest first.
-    return read().items.slice().sort(function (a, b) {
-      return String(b.savedAt).localeCompare(String(a.savedAt));
-    });
-  }
-
-  function get(idOrUrl) {
-    const id = normalizeId(idOrUrl);
-    return read().items.find(function (item) {
-      return item.id === id;
-    }) || null;
-  }
-
-  // Insert or update. Returns the saved item, or null on failure.
-  function save(idOrUrl, report, url) {
-    const id = normalizeId(idOrUrl);
-    const store = read();
-    const existing = store.items.find(function (item) {
-      return item.id === id;
-    });
-
-    if (existing) {
-      existing.savedAt = new Date().toISOString();
-      existing.url = url || existing.url;
-      existing.report = report;
-      return write(store) ? existing : null;
-    }
-
-    const item = {
-      id: id,
-      url: url || null,
-      savedAt: new Date().toISOString(),
-      report: report
+  function countsFor(r) {
+    return {
+      signal: (r.signal || []).length,
+      noise: (r.noise || []).length,
+      unknown: (r.unknown || []).length
     };
-    store.items.push(item);
-    return write(store) ? item : null;
   }
 
-  function remove(idOrUrl) {
-    const id = normalizeId(idOrUrl);
-    const store = read();
-    store.items = store.items.filter(function (item) {
-      return item.id !== id;
-    });
-    return write(store);
-  }
+  window.SNStore = {
+    list: function () {
+      return readAll().slice().sort(function (a, b) {
+        return String(b.savedAt || '').localeCompare(String(a.savedAt || ''));
+      });
+    },
 
-  return {
-    KEY: KEY,
-    list: list,
-    get: get,
-    save: save,
-    remove: remove
+    get: function (id) {
+      var all = readAll();
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].id === id) return all[i];
+      }
+      return null;
+    },
+
+    isSaved: function (url) {
+      var all = readAll();
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].url === url) return true;
+      }
+      return false;
+    },
+
+    /* Dedupes by project URL: re-saving refreshes the existing entry. */
+    saveResearch: function (research) {
+      var all = readAll();
+      var url = research.project.url;
+      var now = new Date().toISOString();
+
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].url === url) {
+          all[i].name = research.project.name;
+          all[i].kind = research.kind;
+          all[i].savedAt = now;
+          all[i].retrievedAt = research.retrievedAt || null;
+          all[i].counts = countsFor(research);
+          all[i].data = research;
+          writeAll(all);
+          return all[i];
+        }
+      }
+
+      var entry = {
+        id: makeId(),
+        kind: research.kind,
+        name: research.project.name,
+        url: url,
+        savedAt: now,
+        retrievedAt: research.retrievedAt || null,
+        counts: countsFor(research),
+        data: research
+      };
+      all.push(entry);
+      writeAll(all);
+      return entry;
+    },
+
+    remove: function (id) {
+      writeAll(readAll().filter(function (e) { return e.id !== id; }));
+    }
   };
+
 })();
