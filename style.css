@@ -1066,3 +1066,39 @@ footer {
   color: var(--signal);
   border-color: var(--signal);
 }
+/* ===== Stage 6: fixes + research input hints ===== */
+
+/* Fix: --signal was never defined in :root. The saved-state
+   color should use --accent (the existing green). */
+.btn.is-saved,
+#saveBtn.is-saved {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Demo link line under the research form. */
+.demo-link-line {
+  margin-top: 28px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.demo-link-line a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--faint);
+  text-underline-offset: 3px;
+}
+
+.demo-link-line a:hover {
+  color: var(--accent);
+}
+
+/* Report error block spacing. */
+#reportError {
+  margin-top: 24px;
+}
+
+#reportError .source-link {
+  margin-top: 12px;
+}
