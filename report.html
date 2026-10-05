@@ -1,93 +1,692 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Report — Signal / Noise</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report — Signal / Noise</title>
+<meta name="description" content="Signal / Noise research report.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
-<body data-page="report">
+<body>
 
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="index.html">Signal <span>/</span> Noise</a>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-      <nav class="site-nav" id="siteNav">
-        <a href="research.html" data-nav="research">Research</a>
-        <a href="projects.html" data-nav="projects">Projects</a>
-      </nav>
-    </div>
-  </header>
+<header>
+  <div class="container header-inner">
+    <a href="index.html" class="logo">
+      SIGNAL <span class="slash">/</span> NOISE
+    </a>
+    <nav>
+      <a href="research.html">Research</a>
+      <a href="projects.html">Projects</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </div>
+</header>
 
-  <main class="container report-page">
+<main class="container-report">
 
-    <!-- Loading state: accurately describes what is happening -->
-    <div class="report-loading" id="reportLoading" hidden>
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <p id="loadingMessage">Retrieving public repository data…</p>
-    </div>
+  <a href="research.html" class="back-link">← Back to research</a>
 
-    <!-- Human-readable error state; never raw API errors -->
-    <div class="report-error" id="reportError" hidden>
-      <h2 id="errorTitle">Couldn't retrieve repository data</h2>
-      <p id="errorMessage"></p>
-      <a class="btn btn-primary" href="research.html">Back to research</a>
-    </div>
+  <p class="session-line" id="sessionLine" hidden></p>
 
-    <!-- Report -->
-    <div id="reportMain" hidden>
+  <p class="report-loading" id="reportLoading" role="status">
+    &gt; Preparing report…
+  </p>
 
-      <div class="demo-banner" id="demoBanner" hidden>
-        Demo research — fictional Northstar dataset. This is not live source data and cannot be saved to your library.
+  <div class="notice" id="reportError" hidden>
+    <p id="reportErrorText"></p>
+    <p><a href="research.html" class="source-link">← Back to research</a></p>
+  </div>
+
+  <div id="reportContent" hidden aria-busy="true">
+
+    <div class="report-head">
+      <span class="example-badge" id="reportBadge" hidden>Example report — fictional data</span>
+      <div class="report-title-row">
+        <h1 id="reportTitle" tabindex="-1">Report</h1>
+        <button type="button" class="btn btn-secondary btn-compact" id="saveBtn">
+          Save research
+        </button>
       </div>
-
-      <header class="report-header">
-        <div class="report-title-row">
-          <div class="report-title-main">
-            <h1 id="projectName"></h1>
-            <a class="report-url" id="projectUrl" href="#" target="_blank" rel="noopener noreferrer"></a>
-          </div>
-          <button class="btn btn-secondary" id="saveBtn" type="button">Save research</button>
-        </div>
-        <p class="report-subline">
-          <span class="src-chip" id="sourceTypeChip"></span>
-          <span id="reportSubline"></span>
-        </p>
-        <p class="save-note" id="saveNote" hidden></p>
-      </header>
-
-      <section class="meta-section" id="metaSection" hidden>
-        <h2>Repository metadata</h2>
-        <dl class="repo-meta" id="repoMeta"></dl>
-      </section>
-
-      <section class="findings-grid">
-        <div class="findings-col">
-          <h2>Signal <span class="count" id="signalCount">00</span></h2>
-          <div class="findings-list" id="signalList"></div>
-        </div>
-        <div class="findings-col">
-          <h2>Noise <span class="count" id="noiseCount">00</span></h2>
-          <div class="findings-list" id="noiseList"></div>
-        </div>
-        <div class="findings-col">
-          <h2>Unknown <span class="count" id="unknownCount">00</span></h2>
-          <div class="findings-list" id="unknownList"></div>
-        </div>
-      </section>
-
-      <section class="sources-section">
-        <h2>Sources</h2>
-        <div class="source-grid" id="sourceList"></div>
-      </section>
-
+      <p class="report-sub" id="reportSub"></p>
+      <p class="report-meta" id="reportMeta"></p>
     </div>
-  </main>
 
-  <script src="sources.js"></script>
-  <script src="store.js"></script>
-  <script src="app.js"></script>
+    <p class="notice" id="reportNotice" hidden></p>
+
+    <div class="summary-block">
+      <p class="panel-label" id="summaryLabel">Findings in this report</p>
+      <div class="summary-grid" id="summaryGrid" aria-label="Findings summary"></div>
+    </div>
+
+    <div class="filter-row" id="filterRow" role="group" aria-label="Filter findings"></div>
+
+    <div id="sections"></div>
+
+  </div>
+
+</main>
+
+<footer>
+  <div class="container footer-inner">
+    <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
+    <span class="footer-logo">SIGNAL / NOISE</span>
+  </div>
+</footer>
+
+<script src="sources.js"></script>
+<script src="store.js"></script>
+<script>
+  (function () {
+    'use strict';
+
+    /* ---------- helpers ---------- */
+
+    function $(id) { return document.getElementById(id); }
+
+    function el(tag, className, text) {
+      var node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined && text !== null) node.textContent = text;
+      return node;
+    }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return pad2(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    function takePending() {
+      try {
+        var raw = sessionStorage.getItem('sn.pending');
+        sessionStorage.removeItem('sn.pending');
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    /* ---------- categories (same labels as Stage 3) ---------- */
+
+    var CATEGORIES = [
+      { key: 'signal',  label: 'Signal',  dotClass: 'dot-signal',  labelClass: 'label-signal',
+        description: 'Information supported by available sources.' },
+      { key: 'noise',   label: 'Noise',   dotClass: 'dot-noise',   labelClass: 'label-noise',
+        description: 'Claims or statements that need further checking.' },
+      { key: 'unknown', label: 'Unknown', dotClass: 'dot-unknown', labelClass: 'label-unknown',
+        description: 'Information that has not been established in this research session.' }
+    ];
+
+    /* ---------- demo data (Northstar — unchanged) ---------- */
+
+    var DEMO_REPORT = {
+      project: { name: 'Northstar', lastChecked: '03 Oct 2026' },
+      categories: CATEGORIES,
+      findings: [
+        { category: 'signal', title: 'Technical documentation',
+          gist: 'Northstar publishes technical documentation describing its system.',
+          detail: 'A documentation site exists and is publicly readable in this demo dataset. The existence of documentation does not confirm that the system behaves as described.',
+          sources: [{ title: 'Demo documentation source', type: 'Documentation', url: null, date: null, publisher: 'Northstar (fictional)' }] },
+        { category: 'signal', title: 'Public code repository',
+          gist: 'A public code repository is linked from the project documentation.',
+          detail: 'A repository is reachable in this demo dataset. A public repository alone does not establish code quality, security, or that the published code matches any deployed system.',
+          sources: [{ title: 'Demo repository source', type: 'GitHub', url: null, date: null, publisher: 'Northstar (fictional)' }] },
+        { category: 'signal', title: 'Public testnet',
+          gist: 'A testnet is available and described in the documentation.',
+          detail: 'Testnet access is described in this demo dataset. A working testnet does not confirm mainnet readiness or production security. Demonstrates the multi-source UI: two references support this finding.',
+          sources: [
+            { title: 'Demo testnet announcement', type: 'Announcement', url: null, date: null, publisher: 'Northstar (fictional)' },
+            { title: 'Signal / Noise repository', type: 'GitHub', url: 'https://github.com/Jaycryp/signal-noise', date: null, publisher: 'Demo link. This is the real repository of this tool, shown so the open-source link state can be seen. It is not Northstar evidence.' }
+          ] },
+        { category: 'noise', title: '"Used by 50,000 developers"',
+          gist: 'This claim appears in project materials without a linked source.',
+          detail: 'The figure is repeated in promotional copy in this demo dataset, but no methodology or source is provided. Signal / Noise flags this for checking. It is not declared false.',
+          sources: [{ title: 'Project materials (demo)', type: 'Other', url: null, date: null, publisher: 'Origin of the claim, not evidence for it.' }] },
+        { category: 'noise', title: 'Token information unclear',
+          gist: 'Materials reference a token but do not establish supply, allocation, or contract details.',
+          detail: 'The token is mentioned without verifiable specifics in this demo dataset. The materials that mention it are not included here. This is flagged for investigation, not declared misleading.',
+          sources: [] },
+        { category: 'unknown', title: 'Team information',
+          gist: 'No reliable team information has been established in this demo research session.',
+          detail: 'Unknown means not established in this research session. It does not mean the information does not exist.',
+          sources: [] },
+        { category: 'unknown', title: 'Token allocation',
+          gist: 'No token allocation breakdown has been established in this demo research session.',
+          detail: 'Allocation details may exist elsewhere. They were not established here.',
+          sources: [] },
+        { category: 'unknown', title: 'Security audits',
+          gist: 'No audit reports have been established in this demo research session.',
+          detail: 'Absence of an audit in this session is not proof that no audit exists.',
+          sources: [] },
+        { category: 'unknown', title: 'Funding and backers',
+          gist: 'No funding or investor information has been established in this demo research session.',
+          detail: 'This stays unestablished until sources establish it.',
+          sources: [] }
+      ]
+    };
+
+    /* ---------- report builders: real data -> renderer shape ---------- */
+
+    function standardUnknowns() {
+      return [
+        { category: 'unknown', title: 'Team information',
+          gist: 'No team information has been established by the current data sources.',
+          detail: 'Unknown means not established in this research session. It does not mean the information does not exist.',
+          sources: [] },
+        { category: 'unknown', title: 'Funding and backers',
+          gist: 'No funding or investor information has been established by the current data sources.',
+          detail: 'This stays unestablished until sources establish it.',
+          sources: [] },
+        { category: 'unknown', title: 'Token & on-chain activity',
+          gist: 'No on-chain data sources are connected yet.',
+          detail: 'No on-chain data has been established in this research session.',
+          sources: [] },
+        { category: 'unknown', title: 'Security posture',
+          gist: 'No security audit information has been established by the current data sources.',
+          detail: 'Absence of an audit in this session is not proof that no audit exists.',
+          sources: [] }
+      ];
+    }
+
+    function buildGithubReport(detection, repo, latestRelease, retrievedAt) {
+      var repoUrl = repo.html_url || detection.repoUrl;
+      var fullName = repo.full_name || (detection.owner + '/' + detection.repo);
+
+      function ghSource(date) {
+        return { title: 'GitHub — ' + fullName, type: 'Code repository',
+                 url: repoUrl, date: date || null, publisher: 'GitHub API' };
+      }
+
+      var findings = [];
+
+      findings.push({
+        category: 'signal', title: 'Public repository',
+        gist: 'The submitted GitHub repository is publicly accessible.',
+        detail: 'GitHub\'s public API returned repository metadata for ' + fullName +
+                '. Public accessibility does not establish code quality, security, or that the published code matches any deployed system.',
+        sources: [ghSource(fmtDate(retrievedAt))]
+      });
+
+      var pushed = fmtDate(repo.pushed_at);
+      if (pushed) {
+        findings.push({
+          category: 'signal', title: 'Repository activity',
+          gist: 'The repository reports a last-updated timestamp of ' + pushed + '.',
+          detail: 'This is the most recent push timestamp reported by GitHub. Recent activity alone does not establish project health or legitimacy.',
+          sources: [ghSource(pushed)]
+        });
+      }
+
+      var created = fmtDate(repo.created_at);
+      if (created) {
+        findings.push({
+          category: 'signal', title: 'Repository age',
+          gist: 'The repository was created on ' + created + '.',
+          detail: 'Creation date as reported by GitHub. Repository age is an observed fact, not a quality signal.',
+          sources: [ghSource(created)]
+        });
+      }
+
+      if (typeof repo.stargazers_count === 'number' && typeof repo.forks_count === 'number') {
+        findings.push({
+          category: 'signal', title: 'Community interest',
+          gist: 'The repository reports ' + repo.stargazers_count.toLocaleString('en-GB') +
+                ' stars and ' + repo.forks_count.toLocaleString('en-GB') + ' forks on GitHub.',
+          detail: 'Star and fork counts as reported by GitHub at retrieval time. These figures can be gamed and do not by themselves establish adoption.',
+          sources: [ghSource(fmtDate(retrievedAt))]
+        });
+      }
+
+      if (repo.language) {
+        findings.push({
+          category: 'signal', title: 'Primary language',
+          gist: 'GitHub reports the repository\'s primary language as ' + repo.language + '.',
+          detail: 'Language detection is performed by GitHub based on repository contents.',
+          sources: [ghSource(null)]
+        });
+      }
+
+      if (repo.license && repo.license.name) {
+        findings.push({
+          category: 'signal', title: 'License declared',
+          gist: 'The repository declares a "' + repo.license.name + '" license.',
+          detail: 'License information as detected by GitHub from repository files.',
+          sources: [ghSource(null)]
+        });
+      }
+
+      if (typeof repo.open_issues_count === 'number') {
+        findings.push({
+          category: 'signal', title: 'Open issues',
+          gist: 'The repository reports ' + repo.open_issues_count.toLocaleString('en-GB') + ' open issues.',
+          detail: 'Open issue count as reported by GitHub. Includes open pull requests in GitHub\'s counting.',
+          sources: [ghSource(fmtDate(retrievedAt))]
+        });
+      }
+
+      if (repo.description) {
+        findings.push({
+          category: 'signal', title: 'Repository description',
+          gist: 'The repository describes itself as: "' + repo.description + '"',
+          detail: 'This is the repository\'s own description as published on GitHub. It is a self-reported statement, not an independently verified claim.',
+          sources: [ghSource(null)]
+        });
+      }
+
+      if (latestRelease && latestRelease.tag_name) {
+        var relDate = fmtDate(latestRelease.published_at);
+        findings.push({
+          category: 'signal', title: 'Latest release',
+          gist: 'The repository\'s latest release is ' + latestRelease.tag_name +
+                (relDate ? ', published ' + relDate + '.' : '.'),
+          detail: 'Release information as published on GitHub.',
+          sources: [{ title: 'GitHub — ' + fullName + ' release ' + latestRelease.tag_name,
+                      type: 'Code repository',
+                      url: latestRelease.html_url || (repoUrl + '/releases'),
+                      date: relDate || null, publisher: 'GitHub API' }]
+        });
+      }
+
+      // Noise: missing information is NOT noise. Nothing unsupported was
+      // claimed, so this category intentionally stays empty in Stage 6.
+
+      if (!repo.license) {
+        findings.push({
+          category: 'unknown', title: 'License',
+          gist: 'No license was detected in the repository metadata.',
+          detail: 'GitHub did not detect a license file. A license may exist in a form GitHub did not detect.',
+          sources: []
+        });
+      }
+
+      findings = findings.concat(standardUnknowns());
+
+      return {
+        project: { name: fullName, url: repoUrl, lastChecked: fmtDate(retrievedAt) },
+        categories: CATEGORIES,
+        findings: findings
+      };
+    }
+
+    function buildBasicReport(detection) {
+      var retrievedAt = new Date().toISOString();
+      var host = detection.hostname || 'submitted URL';
+      var isGhPage = detection.type === 'github_profile';
+      var url = detection.submittedUrl;
+
+      var coverageDetail = isGhPage
+        ? 'This URL looks like a GitHub profile or GitHub page, not a repository. Submit a repository URL such as https://github.com/owner/repository to retrieve repository data.'
+        : 'Automated source discovery for this URL is not available yet. GitHub repositories are the only live source supported in this version. Nothing beyond the submitted URL itself has been researched.';
+
+      var findings = [{
+        category: 'signal', title: 'Research record created',
+        gist: 'A research record was opened for ' + host + '.',
+        detail: 'The submitted URL was recorded. No external sources have been queried for this URL type.',
+        sources: [{ title: host, type: isGhPage ? 'GitHub page' : 'Project website',
+                    url: url, date: fmtDate(retrievedAt), publisher: 'User-submitted URL' }]
+      }];
+
+      findings.push({
+        category: 'unknown', title: 'Source coverage',
+        gist: isGhPage ? 'This is not a repository URL.' : 'Automated source discovery for this URL is not available yet.',
+        detail: coverageDetail,
+        sources: []
+      });
+
+      findings = findings.concat(standardUnknowns());
+
+      return {
+        project: { name: host, url: url, lastChecked: fmtDate(retrievedAt) },
+        categories: CATEGORIES,
+        findings: findings
+      };
+    }
+
+    /* ---------- renderer (your Stage 3–4 rendering logic) ---------- */
+
+    var loadingEl    = $('reportLoading');
+    var contentEl    = $('reportContent');
+    var sessionLine  = $('sessionLine');
+    var summaryGrid  = $('summaryGrid');
+    var summaryLabel = $('summaryLabel');
+    var filterRow    = $('filterRow');
+    var sectionsEl   = $('sections');
+    var badgeEl      = $('reportBadge');
+    var titleEl      = $('reportTitle');
+    var subEl        = $('reportSub');
+    var metaEl       = $('reportMeta');
+    var noticeEl     = $('reportNotice');
+    var saveBtn      = $('saveBtn');
+    var errorEl      = $('reportError');
+    var errorText    = $('reportErrorText');
+
+    var activeReport = null;
+    var saveUrl = null;
+    var saveId = null;
+
+    function countFor(key) {
+      return activeReport.findings.filter(function (f) { return f.category === key; }).length;
+    }
+
+    function renderSummary() {
+      summaryGrid.innerHTML = '';
+      activeReport.categories.forEach(function (cat) {
+        var cell = el('div', 'summary-cell');
+        var name = el('p', 'summary-name ' + cat.labelClass);
+        name.appendChild(el('span', 'dot ' + cat.dotClass));
+        name.appendChild(document.createTextNode(cat.label));
+        cell.appendChild(name);
+        cell.appendChild(el('p', 'summary-count', pad2(countFor(cat.key))));
+        summaryGrid.appendChild(cell);
+      });
+    }
+
+    function makeFilterButton(key, label, count) {
+      var btn = el('button', 'filter-btn');
+      btn.type = 'button';
+      btn.dataset.filter = key;
+      btn.setAttribute('aria-pressed', key === 'all' ? 'true' : 'false');
+      btn.appendChild(document.createTextNode(label));
+      btn.appendChild(el('span', 'filter-count', pad2(count)));
+      btn.addEventListener('click', function () { applyFilter(key); });
+      return btn;
+    }
+
+    function renderFilters() {
+      filterRow.innerHTML = '';
+      filterRow.appendChild(makeFilterButton('all', 'All', activeReport.findings.length));
+      activeReport.categories.forEach(function (cat) {
+        filterRow.appendChild(makeFilterButton(cat.key, cat.label, countFor(cat.key)));
+      });
+    }
+
+    function applyFilter(key) {
+      document.querySelectorAll('.filter-btn').forEach(function (b) {
+        b.setAttribute('aria-pressed', b.dataset.filter === key ? 'true' : 'false');
+      });
+      document.querySelectorAll('.report-section').forEach(function (section) {
+        section.hidden = (key !== 'all' && section.dataset.category !== key);
+      });
+    }
+
+    function sourceCountText(sources) {
+      if (!sources || sources.length === 0) return 'No supporting source';
+      if (sources.length === 1) return '1 source';
+      return sources.length + ' sources';
+    }
+
+    function buildSourceEntry(source) {
+      var entry = el('div', 'source-entry');
+
+      var titleText = source.title;
+      if (source.publisher) titleText += ' · ' + source.publisher;
+      entry.appendChild(el('p', 'source-title', titleText));
+
+      var metaParts = [];
+      if (source.type) metaParts.push(source.type);
+      if (source.date) metaParts.push(source.date);
+      if (source.url) metaParts.push(source.url);
+      entry.appendChild(el('p', 'source-meta', metaParts.join(' · ')));
+
+      if (source.url) {
+        var open = document.createElement('a');
+        open.className = 'source-link';
+        open.href = source.url;
+        open.target = '_blank';
+        open.rel = 'noopener noreferrer';
+        open.setAttribute('aria-label', 'Open source in new tab: ' + source.title);
+        open.appendChild(document.createTextNode('Open source ↗'));
+        entry.appendChild(open);
+      } else {
+        entry.appendChild(el('span', 'source-chip', 'Demo source — no link available'));
+      }
+
+      return entry;
+    }
+
+    function buildSourceBlock(f) {
+      var block = el('div', 'source-block');
+      block.appendChild(el('span', 'source-label', 'Sources'));
+
+      if (!f.sources || f.sources.length === 0) {
+        block.appendChild(el('p', 'source-none', 'No supporting source provided.'));
+        return block;
+      }
+
+      var list = el('ul', 'source-list');
+      f.sources.forEach(function (source) {
+        var li = document.createElement('li');
+        li.appendChild(buildSourceEntry(source));
+        list.appendChild(li);
+      });
+      block.appendChild(list);
+      return block;
+    }
+
+    function buildFinding(f) {
+      var li = el('li');
+      var details = el('details', 'finding');
+
+      var summary = document.createElement('summary');
+      var main = el('span', 'finding-main');
+      main.appendChild(el('span', 'finding-title', f.title));
+      main.appendChild(el('span', 'finding-gist', f.gist));
+      main.appendChild(el('span', 'finding-sources', sourceCountText(f.sources)));
+
+      var toggle = el('span', 'finding-toggle');
+      toggle.setAttribute('aria-hidden', 'true');
+
+      summary.appendChild(main);
+      summary.appendChild(toggle);
+
+      var body = el('div', 'finding-body');
+      body.appendChild(el('p', null, f.detail));
+      body.appendChild(buildSourceBlock(f));
+
+      details.appendChild(summary);
+      details.appendChild(body);
+      li.appendChild(details);
+      return li;
+    }
+
+    function renderSections() {
+      sectionsEl.innerHTML = '';
+      activeReport.categories.forEach(function (cat) {
+        var section = el('section', 'report-section');
+        section.dataset.category = cat.key;
+
+        var title = el('h2', 'section-title ' + cat.labelClass);
+        title.appendChild(el('span', 'dot ' + cat.dotClass));
+        title.appendChild(document.createTextNode(cat.label));
+        section.appendChild(title);
+        section.appendChild(el('p', 'section-desc', cat.description));
+
+        var items = activeReport.findings.filter(function (f) { return f.category === cat.key; });
+
+        if (items.length === 0) {
+          section.appendChild(el('p', 'source-none',
+            cat.key === 'noise'
+              ? 'No unsupported claims identified from the current sources.'
+              : 'No findings in this category from the current sources.'));
+          sectionsEl.appendChild(section);
+          return;
+        }
+
+        var list = el('ul', 'finding-list');
+        items.forEach(function (f) { list.appendChild(buildFinding(f)); });
+        section.appendChild(list);
+        sectionsEl.appendChild(section);
+      });
+    }
+
+    /* ---------- save ---------- */
+
+    function setSavedState() {
+      saveBtn.textContent = 'Saved ✓';
+      saveBtn.classList.add('is-saved');
+    }
+
+    function wireSave() {
+      if (!saveUrl) { saveBtn.style.display = 'none'; return; }
+      saveBtn.style.display = '';
+      if (SNStore.list().some(function (e) { return e.url === saveUrl; })) {
+        setSavedState();
+      }
+      saveBtn.addEventListener('click', function () {
+        var saved = SNStore.save(saveId, activeReport, saveUrl);
+        if (saved) {
+          saveId = saved.id;
+          setSavedState();
+        } else {
+          saveBtn.textContent = 'Could not save';
+        }
+      });
+    }
+
+    /* ---------- show helpers ---------- */
+
+    function showLoading(msg) {
+      loadingEl.textContent = '> ' + msg;
+      loadingEl.hidden = false;
+      errorEl.hidden = true;
+      contentEl.hidden = true;
+    }
+
+    function showError(msg) {
+      loadingEl.hidden = true;
+      contentEl.hidden = true;
+      errorText.textContent = '> ' + msg;
+      errorEl.hidden = false;
+    }
+
+    function renderReport(report, opts) {
+      activeReport = report;
+      saveUrl = opts.saveUrl || null;
+      saveId = opts.saveId || null;
+
+      titleEl.textContent = report.project.name;
+      document.title = report.project.name + ' — Signal / Noise';
+      subEl.textContent = opts.subline || '';
+      metaEl.textContent = report.project.lastChecked
+        ? 'Last checked · ' + report.project.lastChecked : '';
+      summaryLabel.textContent = opts.summaryLabel || 'Findings in this report';
+
+      badgeEl.hidden = !opts.isDemo;
+      noticeEl.textContent = opts.notice || '';
+      noticeEl.hidden = !opts.notice;
+
+      if (opts.session) {
+        sessionLine.textContent = 'Session started for: ' + opts.session;
+        sessionLine.hidden = false;
+      } else {
+        sessionLine.hidden = true;
+      }
+
+      renderSummary();
+      renderFilters();
+      renderSections();
+      wireSave();
+
+      loadingEl.hidden = true;
+      errorEl.hidden = true;
+      contentEl.hidden = false;
+      contentEl.removeAttribute('aria-busy');
+      titleEl.focus();
+    }
+
+    /* ---------- mode runners ---------- */
+
+    function runDemo(noticeOverride) {
+      renderReport(DEMO_REPORT, {
+        isDemo: true,
+        saveUrl: null,
+        subline: 'Example research',
+        summaryLabel: 'Findings in this example report',
+        notice: noticeOverride ||
+          '> Live research isn\'t connected for this view. This example report uses fictional data to show how findings are organized.'
+      });
+    }
+
+    function runSaved(id) {
+      var stored = SNStore.get(id);
+      if (!stored) {
+        runDemo('> That saved research could not be found on this device. Showing the example report.');
+        return;
+      }
+      renderReport(
+        { project: stored.project, categories: stored.categories, findings: stored.findings },
+        { saveUrl: stored.url, saveId: stored.id, subline: 'Saved research' }
+      );
+    }
+
+    function runLive(input) {
+      var detection = Sources.detectSource(input);
+
+      if (detection.type === 'invalid') {
+        showError(Sources.MESSAGES.invalid_url);
+        return;
+      }
+
+      if (detection.type === 'github_repo') {
+        showLoading('Retrieving public repository data…');
+        Sources.fetchGithubResearch(detection)
+          .then(function (result) {
+            var r = result.research;
+            var report = buildGithubReport(r.detection, r.repo, r.latestRelease, r.retrievedAt);
+            renderReport(report, {
+              saveUrl: report.project.url,
+              saveId: 'gh:' + detection.owner.toLowerCase() + '/' + detection.repo.toLowerCase(),
+              subline: 'Live research · GitHub',
+              session: detection.submittedUrl
+            });
+          })
+          .catch(function (err) {
+            showError((err && err.userMessage) || Sources.MESSAGES.api_error);
+          });
+        return;
+      }
+
+      var basic = buildBasicReport(detection);
+      renderReport(basic, {
+        saveUrl: basic.project.url,
+        saveId: 'web:' + (detection.hostname || detection.submittedUrl),
+        subline: 'Research record',
+        session: detection.submittedUrl
+      });
+    }
+
+    /* ---------- boot ---------- */
+
+    var params = new URLSearchParams(window.location.search);
+    var savedParam  = params.get('saved');
+    var liveParam   = params.get('live');
+    var domainParam = params.get('domain');
+
+    if (savedParam) { runSaved(savedParam); return; }
+
+    if (liveParam) {
+      var pending = takePending();
+      if (!pending || String(pending.key) !== String(liveParam)) {
+        runDemo('> That research session expired (this can happen after a refresh). Start a new research to fetch live data. Showing the example report.');
+        return;
+      }
+      runLive(pending.input);
+      return;
+    }
+
+    if (domainParam) { runLive(domainParam.trim().toLowerCase()); return; }
+
+    var stray = takePending();
+    if (stray && stray.input) { runLive(stray.input); return; }
+
+    runDemo();
+
+  })();
+</script>
+
 </body>
 </html>
