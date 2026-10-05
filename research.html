@@ -1,52 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Research — Signal / Noise</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research — Signal / Noise</title>
+<meta name="description" content="Research a Web3 project with Signal / Noise.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
-<body data-page="research">
+<body>
 
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="index.html">Signal <span>/</span> Noise</a>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-      <nav class="site-nav" id="siteNav">
-        <a href="research.html" data-nav="research">Research</a>
-        <a href="projects.html" data-nav="projects">Projects</a>
-      </nav>
-    </div>
-  </header>
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="container header-inner">
+    <a href="index.html" class="logo">
+      SIGNAL <span class="slash">/</span> NOISE
+    </a>
+    <nav>
+      <a href="research.html" class="active" aria-current="page">Research</a>
+      <a href="projects.html">Projects</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </div>
+</header>
 
-  <main class="container research-page">
+<main class="container-report">
+
+  <div class="projects-head">
     <h1>Research a project</h1>
-    <p class="lede">Paste a project URL or GitHub repository. Signal / Noise retrieves what public sources can verify — and marks everything else as unknown.</p>
+    <p class="projects-sub">Paste a project URL or GitHub repository. Signal / Noise retrieves what public sources can verify — and marks everything else as unknown.</p>
+  </div>
 
-    <form id="researchForm" class="research-form" novalidate>
-      <label class="sr-only" for="researchInput">Project URL</label>
-      <input
-        id="researchInput"
-        type="text"
-        inputmode="url"
-        autocomplete="off"
-        spellcheck="false"
-        placeholder="https://github.com/owner/repository"
-      />
-      <p class="input-hint" id="inputHint" hidden></p>
-      <p class="input-error" id="inputError" hidden></p>
-      <button type="submit" class="btn btn-primary">Research</button>
-    </form>
+  <form id="researchForm" novalidate>
+    <label class="sr-only" for="researchInput">Project URL</label>
+    <input
+      id="researchInput"
+      type="text"
+      inputmode="url"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="https://github.com/owner/repository"
+    />
+    <p class="input-hint" id="inputHint" hidden></p>
+    <p class="input-error" id="inputError" hidden></p>
+    <button type="submit" class="btn btn-primary">Research</button>
+  </form>
 
-    <p class="demo-link-line">
-      No project in mind? <a href="report.html?demo=1">View the demo report</a>.
-    </p>
-  </main>
+  <p class="demo-link-line">
+    No project in mind? <a href="report.html">View the demo report</a>.
+  </p>
 
-  <script src="sources.js"></script>
-  <script src="store.js"></script>
-  <script src="app.js"></script>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container footer-inner">
+    <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
+    <span class="footer-logo">SIGNAL / NOISE</span>
+  </div>
+</footer>
+
+<script src="sources.js"></script>
+<script>
+  // ================================================
+  // RESEARCH INPUT (Stage 2 + Stage 6 detection)
+  // Detects the URL type, then hands off to the
+  // report page via sessionStorage + ?live=<key>.
+  // ================================================
+
+  (function () {
+    'use strict';
+
+    var form  = document.getElementById('researchForm');
+    var input = document.getElementById('researchInput');
+    var hint  = document.getElementById('inputHint');
+    var error = document.getElementById('inputError');
+
+    var PENDING_KEY = 'sn.pending';
+
+    function setPending(payload) {
+      try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(payload)); } catch (e) {}
+    }
+
+    input.addEventListener('input', function () {
+      error.hidden = true;
+      var v = input.value.trim();
+      if (!v) { hint.hidden = true; hint.textContent = ''; return; }
+
+      var d = Sources.detectSource(v);
+      if (d.type === 'github_repo') {
+        hint.textContent = '> GitHub repository detected — public data will be retrieved from the GitHub API.';
+        hint.hidden = false;
+      } else if (d.type === 'github_profile') {
+        hint.textContent = '> That looks like a GitHub page, not a repository. A basic research record will be created.';
+        hint.hidden = false;
+      } else if (d.type === 'website') {
+        hint.textContent = '> A basic research record will be created. Automated source discovery for this URL type is not available yet.';
+        hint.hidden = false;
+      } else {
+        hint.hidden = true;
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = input.value.trim();
+      var d = Sources.detectSource(v);
+
+      if (d.type === 'invalid') {
+        hint.hidden = true;
+        error.textContent = '> ' + Sources.MESSAGES.invalid_url;
+        error.hidden = false;
+        input.focus();
+        return;
+      }
+
+      var key = 'k' + Date.now().toString(36);
+      setPending({ key: key, input: v });
+      window.location.href = 'report.html?live=' + encodeURIComponent(key);
+    });
+  })();
+</script>
+
 </body>
 </html>
