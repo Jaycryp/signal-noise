@@ -1,8 +1,10 @@
-/* ============================================================
-   Signal / Noise — store.js
+/* Signal / Noise — store.js
    Saved research library (localStorage).
-   Stage 6: stores full research objects with provenance.
-   ============================================================ */
+   Stores reports in the report-page shape
+   { project, categories, findings } so saved reports
+   reopen from storage alone — never from the network.
+   Also reads legacy Stage 5 entries
+   { report: {...} } and upgrades them on read. */
 
 (function () {
   'use strict';
@@ -18,80 +20,101 @@
   }
 
   function writeAll(list) {
-    localStorage.setItem(KEY, JSON.stringify(list));
+    try { localStorage.setItem(KEY, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
   }
 
-  function makeId() {
-    return 'r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  function normalise(entry) {
+    if (!entry) return null;
+
+    if (Array.isArray(entry.findings) && entry.project) {
+      return {
+        id: entry.id,
+        url: entry.url || (entry.project && entry.project.url) || null,
+        savedAt: entry.savedAt || null,
+        project: entry.project,
+        categories: entry.categories,
+        findings: entry.findings
+      };
+    }
+
+    if (entry.report && Array.isArray(entry.report.findings)) {
+      return {
+        id: entry.id,
+        url: entry.url || null,
+        savedAt: entry.savedAt || null,
+        project: entry.report.project || { name: entry.id },
+        categories: entry.report.categories,
+        findings: entry.report.findings
+      };
+    }
+
+    return null;
   }
 
-  function countsFor(r) {
-    return {
-      signal: (r.signal || []).length,
-      noise: (r.noise || []).length,
-      unknown: (r.unknown || []).length
-    };
+  function upgradeAll(all) {
+    var changed = false;
+    var out = [];
+    all.forEach(function (e) {
+      if (e && Array.isArray(e.findings) && e.project) { out.push(e); return; }
+      var n = normalise(e);
+      if (n) { out.push(n); changed = true; }
+    });
+    if (changed) writeAll(out);
+    return out;
   }
 
   window.SNStore = {
-    list: function () {
-      return readAll().slice().sort(function (a, b) {
-        return String(b.savedAt || '').localeCompare(String(a.savedAt || ''));
-      });
-    },
 
     get: function (id) {
       var all = readAll();
       for (var i = 0; i < all.length; i++) {
-        if (all[i].id === id) return all[i];
+        if (all[i] && all[i].id === id) return normalise(all[i]);
       }
       return null;
     },
 
-    isSaved: function (url) {
-      var all = readAll();
-      for (var i = 0; i < all.length; i++) {
-        if (all[i].url === url) return true;
-      }
-      return false;
+    list: function () {
+      return upgradeAll(readAll()).slice().sort(function (a, b) {
+        return String(b.savedAt || '').localeCompare(String(a.savedAt || ''));
+      });
     },
 
-    /* Dedupes by project URL: re-saving refreshes the existing entry. */
-    saveResearch: function (research) {
+    save: function (id, report, url) {
+      if (!report || !report.project) return null;
       var all = readAll();
-      var url = research.project.url;
       var now = new Date().toISOString();
+      var entryUrl = url || report.project.url || null;
 
-      for (var i = 0; i < all.length; i++) {
-        if (all[i].url === url) {
-          all[i].name = research.project.name;
-          all[i].kind = research.kind;
-          all[i].savedAt = now;
-          all[i].retrievedAt = research.retrievedAt || null;
-          all[i].counts = countsFor(research);
-          all[i].data = research;
-          writeAll(all);
-          return all[i];
+      if (entryUrl) {
+        for (var i = 0; i < all.length; i++) {
+          var n = normalise(all[i]);
+          if (n && n.url === entryUrl) {
+            all[i] = {
+              id: n.id, url: entryUrl, savedAt: now,
+              project: report.project,
+              categories: report.categories,
+              findings: report.findings
+            };
+            return writeAll(all) ? all[i] : null;
+          }
         }
       }
 
       var entry = {
-        id: makeId(),
-        kind: research.kind,
-        name: research.project.name,
-        url: url,
+        id: id || ('r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)),
+        url: entryUrl,
         savedAt: now,
-        retrievedAt: research.retrievedAt || null,
-        counts: countsFor(research),
-        data: research
+        project: report.project,
+        categories: report.categories,
+        findings: report.findings
       };
       all.push(entry);
-      writeAll(all);
-      return entry;
+      return writeAll(all) ? entry : null;
     },
 
     remove: function (id) {
-      writeAll(readAll().filter(function (e) { return e.id !== id; }));
+      writeAll(readAll().filter(function (e) { return e && e.id !== id; }));
     }
   };
 
