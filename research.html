@@ -11,7 +11,6 @@
 </head>
 <body>
 
-<!-- ============ HEADER ============ -->
 <header>
   <div class="container header-inner">
     <a href="index.html" class="logo">
@@ -33,18 +32,21 @@
   </div>
 
   <form id="researchForm" novalidate>
-    <label class="sr-only" for="researchInput">Project URL</label>
-    <input
-      id="researchInput"
-      type="text"
-      inputmode="url"
-      autocomplete="off"
-      spellcheck="false"
-      placeholder="https://github.com/owner/repository"
-    />
-    <p class="input-hint" id="inputHint" hidden></p>
-    <p class="input-error" id="inputError" hidden></p>
-    <button type="submit" class="btn btn-primary">Research</button>
+    <label class="panel-label" for="researchInput">Project URL</label>
+    <div class="input-row">
+      <input
+        id="researchInput"
+        class="research-input"
+        type="text"
+        inputmode="url"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="https://github.com/owner/repository"
+      />
+      <button type="submit" class="btn btn-primary">Research</button>
+    </div>
+    <p class="field-message" id="inputHint" hidden></p>
+    <p class="field-message error" id="inputError" hidden></p>
   </form>
 
   <p class="demo-link-line">
@@ -53,7 +55,6 @@
 
 </main>
 
-<!-- ============ FOOTER ============ -->
 <footer>
   <div class="container footer-inner">
     <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
@@ -63,12 +64,6 @@
 
 <script src="sources.js"></script>
 <script>
-  // ================================================
-  // RESEARCH INPUT (Stage 2 + Stage 6 detection)
-  // Detects the URL type, then hands off to the
-  // report page via sessionStorage + ?live=<key>.
-  // ================================================
-
   (function () {
     'use strict';
 
@@ -77,20 +72,16 @@
     var hint  = document.getElementById('inputHint');
     var error = document.getElementById('inputError');
 
-    var PENDING_KEY = 'sn.pending';
-
-    function setPending(payload) {
-      try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(payload)); } catch (e) {}
-    }
-
     input.addEventListener('input', function () {
       error.hidden = true;
       var v = input.value.trim();
       if (!v) { hint.hidden = true; hint.textContent = ''; return; }
 
       var d = Sources.detectSource(v);
+      hint.className = 'field-message';
       if (d.type === 'github_repo') {
         hint.textContent = '> GitHub repository detected — public data will be retrieved from the GitHub API.';
+        hint.className = 'field-message ok';
         hint.hidden = false;
       } else if (d.type === 'github_profile') {
         hint.textContent = '> That looks like a GitHub page, not a repository. A basic research record will be created.';
@@ -117,7 +108,7 @@
       }
 
       var key = 'k' + Date.now().toString(36);
-      setPending({ key: key, input: v });
+      try { sessionStorage.setItem('sn.pending', JSON.stringify({ key: key, input: v })); } catch (err) {}
       window.location.href = 'report.html?live=' + encodeURIComponent(key);
     });
   })();
