@@ -1,692 +1,468 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Report — Signal / Noise</title>
-<meta name="description" content="Signal / Noise research report.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report — Signal / Noise</title>
+  <meta name="description" content="A Signal / Noise research report — evidence-backed findings, clearly separated from unknowns.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <div class="container header-inner">
-    <a href="index.html" class="logo">
-      SIGNAL <span class="slash">/</span> NOISE
-    </a>
-    <nav>
-      <a href="research.html">Research</a>
-      <a href="projects.html">Projects</a>
-      <a href="index.html#about">About</a>
-    </nav>
-  </div>
-</header>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="wordmark" href="index.html">SIGNAL<span>/</span>NOISE</a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="research.html">Research</a>
+        <a href="projects.html">Projects</a>
+      </nav>
+    </div>
+  </header>
 
-<main class="container-report">
+  <main>
+    <section class="section report-section">
+      <div class="wrap report-wrap">
 
-  <a href="research.html" class="back-link">← Back to research</a>
+        <a class="report-back" href="research.html">&larr; Back to research</a>
 
-  <p class="session-line" id="sessionLine" hidden></p>
+        <div id="report-root">
+          <p class="report-loading">Loading report&hellip;</p>
+        </div>
 
-  <p class="report-loading" id="reportLoading" role="status">
-    &gt; Preparing report…
-  </p>
-
-  <div class="notice" id="reportError" hidden>
-    <p id="reportErrorText"></p>
-    <p><a href="research.html" class="source-link">← Back to research</a></p>
-  </div>
-
-  <div id="reportContent" hidden aria-busy="true">
-
-    <div class="report-head">
-      <span class="example-badge" id="reportBadge" hidden>Example report — fictional data</span>
-      <div class="report-title-row">
-        <h1 id="reportTitle" tabindex="-1">Report</h1>
-        <button type="button" class="btn btn-secondary btn-compact" id="saveBtn">
-          Save research
-        </button>
       </div>
-      <p class="report-sub" id="reportSub"></p>
-      <p class="report-meta" id="reportMeta"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>Signal / Noise is a research tool for Web3 projects. It checks claims against available sources. Nothing here is financial advice.</p>
+      <p class="footer-mark">SIGNAL<span>/</span>NOISE</p>
     </div>
+  </footer>
 
-    <p class="notice" id="reportNotice" hidden></p>
-
-    <div class="summary-block">
-      <p class="panel-label" id="summaryLabel">Findings in this report</p>
-      <div class="summary-grid" id="summaryGrid" aria-label="Findings summary"></div>
-    </div>
-
-    <div class="filter-row" id="filterRow" role="group" aria-label="Filter findings"></div>
-
-    <div id="sections"></div>
-
-  </div>
-
-</main>
-
-<footer>
-  <div class="container footer-inner">
-    <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
-    <span class="footer-logo">SIGNAL / NOISE</span>
-  </div>
-</footer>
-
-<script src="sources.js"></script>
-<script src="store.js"></script>
-<script>
+  <script src="store.js"></script>
+  <script>
   (function () {
-    'use strict';
+    "use strict";
 
-    /* ---------- helpers ---------- */
+    var root = document.getElementById("report-root");
 
-    function $(id) { return document.getElementById(id); }
-
-    function el(tag, className, text) {
-      var node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== undefined && text !== null) node.textContent = text;
-      return node;
-    }
-
-    function pad2(n) { return String(n).padStart(2, '0'); }
-
-    function fmtDate(iso) {
-      if (!iso) return '';
-      var d = new Date(iso);
-      if (isNaN(d.getTime())) return '';
-      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return pad2(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-    }
-
-    function takePending() {
-      try {
-        var raw = sessionStorage.getItem('sn.pending');
-        sessionStorage.removeItem('sn.pending');
-        return raw ? JSON.parse(raw) : null;
-      } catch (e) { return null; }
-    }
-
-    /* ---------- categories (same labels as Stage 3) ---------- */
-
-    var CATEGORIES = [
-      { key: 'signal',  label: 'Signal',  dotClass: 'dot-signal',  labelClass: 'label-signal',
-        description: 'Information supported by available sources.' },
-      { key: 'noise',   label: 'Noise',   dotClass: 'dot-noise',   labelClass: 'label-noise',
-        description: 'Claims or statements that need further checking.' },
-      { key: 'unknown', label: 'Unknown', dotClass: 'dot-unknown', labelClass: 'label-unknown',
-        description: 'Information that has not been established in this research session.' }
-    ];
-
-    /* ---------- demo data (Northstar — unchanged) ---------- */
-
-    var DEMO_REPORT = {
-      project: { name: 'Northstar', lastChecked: '03 Oct 2026' },
-      categories: CATEGORIES,
+    /* ------------------------------------------------ demo report */
+    var DEMO = {
+      project: "Northstar",
+      url: "northstarprotocol.xyz",
+      kind: "demo",
       findings: [
-        { category: 'signal', title: 'Technical documentation',
-          gist: 'Northstar publishes technical documentation describing its system.',
-          detail: 'A documentation site exists and is publicly readable in this demo dataset. The existence of documentation does not confirm that the system behaves as described.',
-          sources: [{ title: 'Demo documentation source', type: 'Documentation', url: null, date: null, publisher: 'Northstar (fictional)' }] },
-        { category: 'signal', title: 'Public code repository',
-          gist: 'A public code repository is linked from the project documentation.',
-          detail: 'A repository is reachable in this demo dataset. A public repository alone does not establish code quality, security, or that the published code matches any deployed system.',
-          sources: [{ title: 'Demo repository source', type: 'GitHub', url: null, date: null, publisher: 'Northstar (fictional)' }] },
-        { category: 'signal', title: 'Public testnet',
-          gist: 'A testnet is available and described in the documentation.',
-          detail: 'Testnet access is described in this demo dataset. A working testnet does not confirm mainnet readiness or production security. Demonstrates the multi-source UI: two references support this finding.',
+        {
+          bucket: "signal",
+          title: "Public code repository",
+          body: "The project maintains a public code repository that can be inspected by anyone.",
           sources: [
-            { title: 'Demo testnet announcement', type: 'Announcement', url: null, date: null, publisher: 'Northstar (fictional)' },
-            { title: 'Signal / Noise repository', type: 'GitHub', url: 'https://github.com/Jaycryp/signal-noise', date: null, publisher: 'Demo link. This is the real repository of this tool, shown so the open-source link state can be seen. It is not Northstar evidence.' }
-          ] },
-        { category: 'noise', title: '"Used by 50,000 developers"',
-          gist: 'This claim appears in project materials without a linked source.',
-          detail: 'The figure is repeated in promotional copy in this demo dataset, but no methodology or source is provided. Signal / Noise flags this for checking. It is not declared false.',
-          sources: [{ title: 'Project materials (demo)', type: 'Other', url: null, date: null, publisher: 'Origin of the claim, not evidence for it.' }] },
-        { category: 'noise', title: 'Token information unclear',
-          gist: 'Materials reference a token but do not establish supply, allocation, or contract details.',
-          detail: 'The token is mentioned without verifiable specifics in this demo dataset. The materials that mention it are not included here. This is flagged for investigation, not declared misleading.',
-          sources: [] },
-        { category: 'unknown', title: 'Team information',
-          gist: 'No reliable team information has been established in this demo research session.',
-          detail: 'Unknown means not established in this research session. It does not mean the information does not exist.',
-          sources: [] },
-        { category: 'unknown', title: 'Token allocation',
-          gist: 'No token allocation breakdown has been established in this demo research session.',
-          detail: 'Allocation details may exist elsewhere. They were not established here.',
-          sources: [] },
-        { category: 'unknown', title: 'Security audits',
-          gist: 'No audit reports have been established in this demo research session.',
-          detail: 'Absence of an audit in this session is not proof that no audit exists.',
-          sources: [] },
-        { category: 'unknown', title: 'Funding and backers',
-          gist: 'No funding or investor information has been established in this demo research session.',
-          detail: 'This stays unestablished until sources establish it.',
-          sources: [] }
+            { name: "github.com/Jaycryp/signal-noise", label: "Project website", date: "24 Sep 2026",
+              url: "https://github.com/Jaycryp/signal-noise",
+              detail: "Linked directly from the project homepage. Contents are publicly viewable." }
+          ]
+        },
+        {
+          bucket: "signal",
+          title: "Published documentation",
+          body: "Technical documentation is published and covers the protocol\u2019s core mechanics.",
+          sources: [
+            { name: "docs.northstarprotocol.xyz", label: "Documentation", date: "24 Sep 2026", url: null,
+              detail: "Documentation describes the protocol architecture and token mechanics." }
+          ]
+        },
+        {
+          bucket: "signal",
+          title: "Identifiable team members",
+          body: "Two team members are publicly named with verifiable professional histories.",
+          sources: [
+            { name: "northstarprotocol.xyz/team", label: "Project website", date: "24 Sep 2026", url: null,
+              detail: "Names and roles listed. Professional profiles cross-checked." }
+          ]
+        },
+        {
+          bucket: "noise",
+          title: "\u201CBacked by leading investors\u201D",
+          body: "The website claims backing from leading investors but names none of them.",
+          sources: [
+            { name: "northstarprotocol.xyz", label: "Project website", date: "24 Sep 2026", url: null,
+              detail: "Claim appears on the homepage. No investor names, announcements, or filings found." }
+          ]
+        },
+        {
+          bucket: "noise",
+          title: "\u201CAudited smart contracts\u201D",
+          body: "An audit is mentioned, but no audit report or auditor name is provided.",
+          sources: [
+            { name: "northstarprotocol.xyz", label: "Project website", date: "24 Sep 2026", url: null,
+              detail: "Audit referenced in marketing copy. No report linked or found elsewhere." }
+          ]
+        },
+        {
+          bucket: "unknown",
+          title: "Token distribution",
+          body: "No public breakdown of token allocation was found during this research session.",
+          sources: []
+        },
+        {
+          bucket: "unknown",
+          title: "Treasury management",
+          body: "No information found about how project funds are held or managed.",
+          sources: []
+        },
+        {
+          bucket: "unknown",
+          title: "On-chain activity",
+          body: "On-chain data sources are not yet connected in this version of the tool.",
+          sources: []
+        },
+        {
+          bucket: "unknown",
+          title: "Regulatory status",
+          body: "No regulatory filings or registrations were identified during this session.",
+          sources: []
+        }
       ]
     };
 
-    /* ---------- report builders: real data -> renderer shape ---------- */
+    var BUCKETS = ["signal", "noise", "unknown"];
+    var BUCKET_META = {
+      signal:  { label: "Signal",  desc: "Information supported by available sources." },
+      noise:   { label: "Noise",   desc: "Claims or statements that need further checking." },
+      unknown: { label: "Unknown", desc: "Information that has not been established in this research session." }
+    };
+    var KIND_LABELS = { github: "Live research · GitHub", basic: "Research record", demo: "Demo report" };
+    var activeFilter = "all";
+    var currentReport = null;
 
-    function standardUnknowns() {
-      return [
-        { category: 'unknown', title: 'Team information',
-          gist: 'No team information has been established by the current data sources.',
-          detail: 'Unknown means not established in this research session. It does not mean the information does not exist.',
-          sources: [] },
-        { category: 'unknown', title: 'Funding and backers',
-          gist: 'No funding or investor information has been established by the current data sources.',
-          detail: 'This stays unestablished until sources establish it.',
-          sources: [] },
-        { category: 'unknown', title: 'Token & on-chain activity',
-          gist: 'No on-chain data sources are connected yet.',
-          detail: 'No on-chain data has been established in this research session.',
-          sources: [] },
-        { category: 'unknown', title: 'Security posture',
-          gist: 'No security audit information has been established by the current data sources.',
-          detail: 'Absence of an audit in this session is not proof that no audit exists.',
-          sources: [] }
-      ];
+    function esc(value) {
+      return String(value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
-    function buildGithubReport(detection, repo, latestRelease, retrievedAt) {
-      var repoUrl = repo.html_url || detection.repoUrl;
-      var fullName = repo.full_name || (detection.owner + '/' + detection.repo);
+    function byBucket(bucket) {
+      return currentReport.findings.filter(function (f) { return f.bucket === bucket; });
+    }
 
-      function ghSource(date) {
-        return { title: 'GitHub — ' + fullName, type: 'Code repository',
-                 url: repoUrl, date: date || null, publisher: 'GitHub API' };
+    function counts() {
+      var c = { signal: 0, noise: 0, unknown: 0 };
+      currentReport.findings.forEach(function (f) {
+        if (c[f.bucket] !== undefined) c[f.bucket]++;
+      });
+      return c;
+    }
+
+    function formatChecked(iso) {
+      if (!iso) return "";
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    }
+
+    /* ------------------------------------------------ render */
+
+    function render() {
+      var c = counts();
+      var kindLabel = KIND_LABELS[currentReport.kind] || "Research report";
+      var checked = formatChecked(currentReport.checkedAt);
+      var isDemo = currentReport.kind === "demo";
+      var savedEntry = !isDemo && window.SN_STORE ? SN_STORE.findByUrl(currentReport.url) : null;
+      var from = currentReport.from;
+      var sessionNote = "";
+
+      if (from === "saved") {
+        sessionNote = '<p class="report-notice">Opened from your saved research. Last checked ' + esc(checked || "unknown") + ".</p>";
+      } else if (from === "fallback-demo") {
+        sessionNote = '<p class="report-notice">That research session expired after a refresh, so the demo report is shown. Run a new research to generate a live one.</p>';
+      } else if (from === "session") {
+        sessionNote = '<p class="report-notice">Session started for: <span class="report-notice-url">' + esc(currentReport.url) + "</span></p>";
       }
 
-      var findings = [];
+      var headerNote = currentReport.fallbackNote
+        ? '<p class="report-notice">' + esc(currentReport.fallbackNote) + "</p>"
+        : "";
 
-      findings.push({
-        category: 'signal', title: 'Public repository',
-        gist: 'The submitted GitHub repository is publicly accessible.',
-        detail: 'GitHub\'s public API returned repository metadata for ' + fullName +
-                '. Public accessibility does not establish code quality, security, or that the published code matches any deployed system.',
-        sources: [ghSource(fmtDate(retrievedAt))]
+      var dossier = currentReport.dossier || null;
+      var d = dossier || {};
+      var sourceLine = isDemo ? "Source: demo data" : (currentReport.kind === "github" ? "Source: GitHub" : "Source: user-submitted URL");
+
+      var html =
+        sessionNote +
+        '<div class="report-head">' +
+          '<div class="report-head-main">' +
+            '<p class="report-eyebrow">' + esc(kindLabel) + '</p>' +
+            '<h1 class="report-title">' + esc(currentReport.project) + '</h1>' +
+            '<p class="report-url">' + esc(currentReport.url) + '</p>' +
+            (d.description ? '<p class="report-desc">' + esc(d.description) + '</p>' : '') +
+            '<p class="report-source-line">' + esc(sourceLine) + '</p>' +
+            (isDemo ? '<span class="demo-badge">Example report — fictional data</span>' : '') +
+          '</div>' +
+          (!isDemo ?
+            '<div class="report-head-actions">' +
+              '<button type="button" class="btn-save" id="btn-save" data-saved="' + (savedEntry ? "true" : "false") + '">' +
+                (savedEntry ? "Saved ✓" : "Save research") +
+              '</button>' +
+              (savedEntry ? '<p class="save-note">Saved ' + esc(formatChecked(savedEntry.savedAt) || "") + '</p>' : '') +
+            '</div>'
+          : '') +
+        '</div>' +
+        headerNote +
+        (d.rows ? renderDossier(d) : '') +
+        renderReadme(d) +
+        renderSummary(c) +
+        renderFilters(c) +
+        '<div id="findings-root">' + renderFindings() + '</div>';
+
+      root.innerHTML = html;
+
+      document.querySelectorAll(".finding-head").forEach(function (head) {
+        head.addEventListener("click", function () { toggleFinding(head); });
+        head.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFinding(head); }
+        });
       });
 
-      var pushed = fmtDate(repo.pushed_at);
-      if (pushed) {
-        findings.push({
-          category: 'signal', title: 'Repository activity',
-          gist: 'The repository reports a last-updated timestamp of ' + pushed + '.',
-          detail: 'This is the most recent push timestamp reported by GitHub. Recent activity alone does not establish project health or legitimacy.',
-          sources: [ghSource(pushed)]
+      document.querySelectorAll(".filter-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          activeFilter = btn.getAttribute("data-filter");
+          document.querySelectorAll(".filter-btn").forEach(function (b) {
+            var on = b === btn;
+            b.classList.toggle("is-active", on);
+            b.setAttribute("aria-pressed", on ? "true" : "false");
+          });
+          document.getElementById("findings-root").innerHTML = renderFindings();
+          bindFindingEvents();
         });
-      }
-
-      var created = fmtDate(repo.created_at);
-      if (created) {
-        findings.push({
-          category: 'signal', title: 'Repository age',
-          gist: 'The repository was created on ' + created + '.',
-          detail: 'Creation date as reported by GitHub. Repository age is an observed fact, not a quality signal.',
-          sources: [ghSource(created)]
-        });
-      }
-
-      if (typeof repo.stargazers_count === 'number' && typeof repo.forks_count === 'number') {
-        findings.push({
-          category: 'signal', title: 'Community interest',
-          gist: 'The repository reports ' + repo.stargazers_count.toLocaleString('en-GB') +
-                ' stars and ' + repo.forks_count.toLocaleString('en-GB') + ' forks on GitHub.',
-          detail: 'Star and fork counts as reported by GitHub at retrieval time. These figures can be gamed and do not by themselves establish adoption.',
-          sources: [ghSource(fmtDate(retrievedAt))]
-        });
-      }
-
-      if (repo.language) {
-        findings.push({
-          category: 'signal', title: 'Primary language',
-          gist: 'GitHub reports the repository\'s primary language as ' + repo.language + '.',
-          detail: 'Language detection is performed by GitHub based on repository contents.',
-          sources: [ghSource(null)]
-        });
-      }
-
-      if (repo.license && repo.license.name) {
-        findings.push({
-          category: 'signal', title: 'License declared',
-          gist: 'The repository declares a "' + repo.license.name + '" license.',
-          detail: 'License information as detected by GitHub from repository files.',
-          sources: [ghSource(null)]
-        });
-      }
-
-      if (typeof repo.open_issues_count === 'number') {
-        findings.push({
-          category: 'signal', title: 'Open issues',
-          gist: 'The repository reports ' + repo.open_issues_count.toLocaleString('en-GB') + ' open issues.',
-          detail: 'Open issue count as reported by GitHub. Includes open pull requests in GitHub\'s counting.',
-          sources: [ghSource(fmtDate(retrievedAt))]
-        });
-      }
-
-      if (repo.description) {
-        findings.push({
-          category: 'signal', title: 'Repository description',
-          gist: 'The repository describes itself as: "' + repo.description + '"',
-          detail: 'This is the repository\'s own description as published on GitHub. It is a self-reported statement, not an independently verified claim.',
-          sources: [ghSource(null)]
-        });
-      }
-
-      if (latestRelease && latestRelease.tag_name) {
-        var relDate = fmtDate(latestRelease.published_at);
-        findings.push({
-          category: 'signal', title: 'Latest release',
-          gist: 'The repository\'s latest release is ' + latestRelease.tag_name +
-                (relDate ? ', published ' + relDate + '.' : '.'),
-          detail: 'Release information as published on GitHub.',
-          sources: [{ title: 'GitHub — ' + fullName + ' release ' + latestRelease.tag_name,
-                      type: 'Code repository',
-                      url: latestRelease.html_url || (repoUrl + '/releases'),
-                      date: relDate || null, publisher: 'GitHub API' }]
-        });
-      }
-
-      // Noise: missing information is NOT noise. Nothing unsupported was
-      // claimed, so this category intentionally stays empty in Stage 6.
-
-      if (!repo.license) {
-        findings.push({
-          category: 'unknown', title: 'License',
-          gist: 'No license was detected in the repository metadata.',
-          detail: 'GitHub did not detect a license file. A license may exist in a form GitHub did not detect.',
-          sources: []
-        });
-      }
-
-      findings = findings.concat(standardUnknowns());
-
-      return {
-        project: { name: fullName, url: repoUrl, lastChecked: fmtDate(retrievedAt) },
-        categories: CATEGORIES,
-        findings: findings
-      };
-    }
-
-    function buildBasicReport(detection) {
-      var retrievedAt = new Date().toISOString();
-      var host = detection.hostname || 'submitted URL';
-      var isGhPage = detection.type === 'github_profile';
-      var url = detection.submittedUrl;
-
-      var coverageDetail = isGhPage
-        ? 'This URL looks like a GitHub profile or GitHub page, not a repository. Submit a repository URL such as https://github.com/owner/repository to retrieve repository data.'
-        : 'Automated source discovery for this URL is not available yet. GitHub repositories are the only live source supported in this version. Nothing beyond the submitted URL itself has been researched.';
-
-      var findings = [{
-        category: 'signal', title: 'Research record created',
-        gist: 'A research record was opened for ' + host + '.',
-        detail: 'The submitted URL was recorded. No external sources have been queried for this URL type.',
-        sources: [{ title: host, type: isGhPage ? 'GitHub page' : 'Project website',
-                    url: url, date: fmtDate(retrievedAt), publisher: 'User-submitted URL' }]
-      }];
-
-      findings.push({
-        category: 'unknown', title: 'Source coverage',
-        gist: isGhPage ? 'This is not a repository URL.' : 'Automated source discovery for this URL is not available yet.',
-        detail: coverageDetail,
-        sources: []
       });
 
-      findings = findings.concat(standardUnknowns());
-
-      return {
-        project: { name: host, url: url, lastChecked: fmtDate(retrievedAt) },
-        categories: CATEGORIES,
-        findings: findings
-      };
+      var saveBtn = document.getElementById("btn-save");
+      if (saveBtn) {
+        saveBtn.addEventListener("click", function () {
+          if (saveBtn.getAttribute("data-saved") === "true") return;
+          SN_STORE.saveReport(currentReport);
+          saveBtn.setAttribute("data-saved", "true");
+          saveBtn.textContent = "Saved ✓";
+          var note = document.querySelector(".save-note");
+          if (!note) {
+            note = document.createElement("p");
+            note.className = "save-note";
+            saveBtn.parentNode.appendChild(note);
+          }
+          note.textContent = "Saved " + formatChecked(new Date().toISOString());
+        });
+      }
     }
 
-    /* ---------- renderer (your Stage 3–4 rendering logic) ---------- */
-
-    var loadingEl    = $('reportLoading');
-    var contentEl    = $('reportContent');
-    var sessionLine  = $('sessionLine');
-    var summaryGrid  = $('summaryGrid');
-    var summaryLabel = $('summaryLabel');
-    var filterRow    = $('filterRow');
-    var sectionsEl   = $('sections');
-    var badgeEl      = $('reportBadge');
-    var titleEl      = $('reportTitle');
-    var subEl        = $('reportSub');
-    var metaEl       = $('reportMeta');
-    var noticeEl     = $('reportNotice');
-    var saveBtn      = $('saveBtn');
-    var errorEl      = $('reportError');
-    var errorText    = $('reportErrorText');
-
-    var activeReport = null;
-    var saveUrl = null;
-    var saveId = null;
-
-    function countFor(key) {
-      return activeReport.findings.filter(function (f) { return f.category === key; }).length;
+    function renderDossier(d) {
+      var rows = d.rows.map(function (pair) {
+        return '<div class="dossier-row">' +
+          '<dt class="dossier-key">' + esc(pair[0]) + '</dt>' +
+          '<dd class="dossier-val">' + esc(pair[1]) + '</dd>' +
+        '</div>';
+      }).join("");
+      return '<section class="dossier" aria-label="Repository metadata">' +
+        '<h2 class="dossier-title">Repository</h2>' +
+        '<dl class="dossier-grid">' + rows + '</dl>' +
+      '</section>';
     }
 
-    function renderSummary() {
-      summaryGrid.innerHTML = '';
-      activeReport.categories.forEach(function (cat) {
-        var cell = el('div', 'summary-cell');
-        var name = el('p', 'summary-name ' + cat.labelClass);
-        name.appendChild(el('span', 'dot ' + cat.dotClass));
-        name.appendChild(document.createTextNode(cat.label));
-        cell.appendChild(name);
-        cell.appendChild(el('p', 'summary-count', pad2(countFor(cat.key))));
-        summaryGrid.appendChild(cell);
-      });
-    }
-
-    function makeFilterButton(key, label, count) {
-      var btn = el('button', 'filter-btn');
-      btn.type = 'button';
-      btn.dataset.filter = key;
-      btn.setAttribute('aria-pressed', key === 'all' ? 'true' : 'false');
-      btn.appendChild(document.createTextNode(label));
-      btn.appendChild(el('span', 'filter-count', pad2(count)));
-      btn.addEventListener('click', function () { applyFilter(key); });
-      return btn;
-    }
-
-    function renderFilters() {
-      filterRow.innerHTML = '';
-      filterRow.appendChild(makeFilterButton('all', 'All', activeReport.findings.length));
-      activeReport.categories.forEach(function (cat) {
-        filterRow.appendChild(makeFilterButton(cat.key, cat.label, countFor(cat.key)));
-      });
-    }
-
-    function applyFilter(key) {
-      document.querySelectorAll('.filter-btn').forEach(function (b) {
-        b.setAttribute('aria-pressed', b.dataset.filter === key ? 'true' : 'false');
-      });
-      document.querySelectorAll('.report-section').forEach(function (section) {
-        section.hidden = (key !== 'all' && section.dataset.category !== key);
-      });
-    }
-
-    function sourceCountText(sources) {
-      if (!sources || sources.length === 0) return 'No supporting source';
-      if (sources.length === 1) return '1 source';
-      return sources.length + ' sources';
-    }
-
-    function buildSourceEntry(source) {
-      var entry = el('div', 'source-entry');
-
-      var titleText = source.title;
-      if (source.publisher) titleText += ' · ' + source.publisher;
-      entry.appendChild(el('p', 'source-title', titleText));
-
-      var metaParts = [];
-      if (source.type) metaParts.push(source.type);
-      if (source.date) metaParts.push(source.date);
-      if (source.url) metaParts.push(source.url);
-      entry.appendChild(el('p', 'source-meta', metaParts.join(' · ')));
-
-      if (source.url) {
-        var open = document.createElement('a');
-        open.className = 'source-link';
-        open.href = source.url;
-        open.target = '_blank';
-        open.rel = 'noopener noreferrer';
-        open.setAttribute('aria-label', 'Open source in new tab: ' + source.title);
-        open.appendChild(document.createTextNode('Open source ↗'));
-        entry.appendChild(open);
+    function renderReadme(d) {
+      if (!("readme" in d)) return "";
+      var inner;
+      if (d.readme && d.readme.excerpt) {
+        inner = '<pre class="readme-excerpt">' + esc(d.readme.excerpt) + '</pre>' +
+          '<a class="source-link" href="' + esc(d.readme.url) + '" target="_blank" rel="noopener noreferrer">Read full README on GitHub ↗</a>';
       } else {
-        entry.appendChild(el('span', 'source-chip', 'Demo source — no link available'));
+        inner = '<p class="readme-missing">No README reported by GitHub for this repository.</p>';
       }
-
-      return entry;
+      return '<section class="readme-block" aria-label="README">' +
+        '<h2 class="dossier-title">README</h2>' + inner +
+      '</section>';
     }
 
-    function buildSourceBlock(f) {
-      var block = el('div', 'source-block');
-      block.appendChild(el('span', 'source-label', 'Sources'));
-
-      if (!f.sources || f.sources.length === 0) {
-        block.appendChild(el('p', 'source-none', 'No supporting source provided.'));
-        return block;
-      }
-
-      var list = el('ul', 'source-list');
-      f.sources.forEach(function (source) {
-        var li = document.createElement('li');
-        li.appendChild(buildSourceEntry(source));
-        list.appendChild(li);
-      });
-      block.appendChild(list);
-      return block;
-    }
-
-    function buildFinding(f) {
-      var li = el('li');
-      var details = el('details', 'finding');
-
-      var summary = document.createElement('summary');
-      var main = el('span', 'finding-main');
-      main.appendChild(el('span', 'finding-title', f.title));
-      main.appendChild(el('span', 'finding-gist', f.gist));
-      main.appendChild(el('span', 'finding-sources', sourceCountText(f.sources)));
-
-      var toggle = el('span', 'finding-toggle');
-      toggle.setAttribute('aria-hidden', 'true');
-
-      summary.appendChild(main);
-      summary.appendChild(toggle);
-
-      var body = el('div', 'finding-body');
-      body.appendChild(el('p', null, f.detail));
-      body.appendChild(buildSourceBlock(f));
-
-      details.appendChild(summary);
-      details.appendChild(body);
-      li.appendChild(details);
-      return li;
-    }
-
-    function renderSections() {
-      sectionsEl.innerHTML = '';
-      activeReport.categories.forEach(function (cat) {
-        var section = el('section', 'report-section');
-        section.dataset.category = cat.key;
-
-        var title = el('h2', 'section-title ' + cat.labelClass);
-        title.appendChild(el('span', 'dot ' + cat.dotClass));
-        title.appendChild(document.createTextNode(cat.label));
-        section.appendChild(title);
-        section.appendChild(el('p', 'section-desc', cat.description));
-
-        var items = activeReport.findings.filter(function (f) { return f.category === cat.key; });
-
-        if (items.length === 0) {
-          section.appendChild(el('p', 'source-none',
-            cat.key === 'noise'
-              ? 'No unsupported claims identified from the current sources.'
-              : 'No findings in this category from the current sources.'));
-          sectionsEl.appendChild(section);
-          return;
-        }
-
-        var list = el('ul', 'finding-list');
-        items.forEach(function (f) { list.appendChild(buildFinding(f)); });
-        section.appendChild(list);
-        sectionsEl.appendChild(section);
+    function bindFindingEvents() {
+      document.querySelectorAll(".finding-head").forEach(function (head) {
+        head.addEventListener("click", function () { toggleFinding(head); });
+        head.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFinding(head); }
+        });
       });
     }
 
-    /* ---------- save ---------- */
-
-    function setSavedState() {
-      saveBtn.textContent = 'Saved ✓';
-      saveBtn.classList.add('is-saved');
-    }
-
-    function wireSave() {
-      if (!saveUrl) { saveBtn.style.display = 'none'; return; }
-      saveBtn.style.display = '';
-      if (SNStore.list().some(function (e) { return e.url === saveUrl; })) {
-        setSavedState();
-      }
-      saveBtn.addEventListener('click', function () {
-        var saved = SNStore.save(saveId, activeReport, saveUrl);
-        if (saved) {
-          saveId = saved.id;
-          setSavedState();
-        } else {
-          saveBtn.textContent = 'Could not save';
-        }
-      });
-    }
-
-    /* ---------- show helpers ---------- */
-
-    function showLoading(msg) {
-      loadingEl.textContent = '> ' + msg;
-      loadingEl.hidden = false;
-      errorEl.hidden = true;
-      contentEl.hidden = true;
-    }
-
-    function showError(msg) {
-      loadingEl.hidden = true;
-      contentEl.hidden = true;
-      errorText.textContent = '> ' + msg;
-      errorEl.hidden = false;
-    }
-
-    function renderReport(report, opts) {
-      activeReport = report;
-      saveUrl = opts.saveUrl || null;
-      saveId = opts.saveId || null;
-
-      titleEl.textContent = report.project.name;
-      document.title = report.project.name + ' — Signal / Noise';
-      subEl.textContent = opts.subline || '';
-      metaEl.textContent = report.project.lastChecked
-        ? 'Last checked · ' + report.project.lastChecked : '';
-      summaryLabel.textContent = opts.summaryLabel || 'Findings in this report';
-
-      badgeEl.hidden = !opts.isDemo;
-      noticeEl.textContent = opts.notice || '';
-      noticeEl.hidden = !opts.notice;
-
-      if (opts.session) {
-        sessionLine.textContent = 'Session started for: ' + opts.session;
-        sessionLine.hidden = false;
-      } else {
-        sessionLine.hidden = true;
-      }
-
-      renderSummary();
-      renderFilters();
-      renderSections();
-      wireSave();
-
-      loadingEl.hidden = true;
-      errorEl.hidden = true;
-      contentEl.hidden = false;
-      contentEl.removeAttribute('aria-busy');
-      titleEl.focus();
-    }
-
-    /* ---------- mode runners ---------- */
-
-    function runDemo(noticeOverride) {
-      renderReport(DEMO_REPORT, {
-        isDemo: true,
-        saveUrl: null,
-        subline: 'Example research',
-        summaryLabel: 'Findings in this example report',
-        notice: noticeOverride ||
-          '> Live research isn\'t connected for this view. This example report uses fictional data to show how findings are organized.'
-      });
-    }
-
-    function runSaved(id) {
-      var stored = SNStore.get(id);
-      if (!stored) {
-        runDemo('> That saved research could not be found on this device. Showing the example report.');
-        return;
-      }
-      renderReport(
-        { project: stored.project, categories: stored.categories, findings: stored.findings },
-        { saveUrl: stored.url, saveId: stored.id, subline: 'Saved research' }
+    function renderSummary(c) {
+      return (
+        '<section class="report-summary" aria-label="Findings summary">' +
+          '<p class="summary-title">Findings in this report</p>' +
+          '<div class="summary-grid">' +
+            summaryCell("signal", c.signal) +
+            summaryCell("noise", c.noise) +
+            summaryCell("unknown", c.unknown) +
+          '</div>' +
+        '</section>'
       );
     }
 
-    function runLive(input) {
-      var detection = Sources.detectSource(input);
+    function summaryCell(bucket, n) {
+      return (
+        '<div class="summary-cell summary-' + bucket + '">' +
+          '<span class="summary-label">' + BUCKET_META[bucket].label + '</span>' +
+          '<span class="summary-count">' + String(n).padStart(2, "0") + '</span>' +
+        '</div>'
+      );
+    }
 
-      if (detection.type === 'invalid') {
-        showError(Sources.MESSAGES.invalid_url);
-        return;
-      }
+    function renderFilters(c) {
+      var total = c.signal + c.noise + c.unknown;
+      return (
+        '<div class="report-filters" role="group" aria-label="Filter findings">' +
+          filterBtn("all", "All", total) +
+          filterBtn("signal", "Signal", c.signal) +
+          filterBtn("noise", "Noise", c.noise) +
+          filterBtn("unknown", "Unknown", c.unknown) +
+        '</div>'
+      );
+    }
 
-      if (detection.type === 'github_repo') {
-        showLoading('Retrieving public repository data…');
-        Sources.fetchGithubResearch(detection)
-          .then(function (result) {
-            var r = result.research;
-            var report = buildGithubReport(r.detection, r.repo, r.latestRelease, r.retrievedAt);
-            renderReport(report, {
-              saveUrl: report.project.url,
-              saveId: 'gh:' + detection.owner.toLowerCase() + '/' + detection.repo.toLowerCase(),
-              subline: 'Live research · GitHub',
-              session: detection.submittedUrl
-            });
-          })
-          .catch(function (err) {
-            showError((err && err.userMessage) || Sources.MESSAGES.api_error);
-          });
-        return;
-      }
+    function filterBtn(key, label, n) {
+      var active = activeFilter === key ? " is-active" : "";
+      return (
+        '<button type="button" class="filter-btn' + active + '" data-filter="' + key + '" aria-pressed="' + (activeFilter === key) + '">' +
+          label + ' <span class="filter-count">' + String(n).padStart(2, "0") + '</span>' +
+        '</button>'
+      );
+    }
 
-      var basic = buildBasicReport(detection);
-      renderReport(basic, {
-        saveUrl: basic.project.url,
-        saveId: 'web:' + (detection.hostname || detection.submittedUrl),
-        subline: 'Research record',
-        session: detection.submittedUrl
+    function renderFindings() {
+      var html = "";
+      BUCKETS.forEach(function (bucket) {
+        if (activeFilter !== "all" && activeFilter !== bucket) return;
+        var items = byBucket(bucket);
+        html +=
+          '<section class="bucket bucket-' + bucket + '">' +
+            '<header class="bucket-head">' +
+              '<h2 class="bucket-title">' + BUCKET_META[bucket].label + '</h2>' +
+              '<p class="bucket-desc">' + BUCKET_META[bucket].desc + '</p>' +
+            '</header>' +
+            (items.length ? items.map(findingCard).join("") : emptyState(bucket)) +
+          '</section>';
       });
+      return html;
     }
 
-    /* ---------- boot ---------- */
+    function emptyState(bucket) {
+      var msg = {
+        signal: "No verified findings were established from the current sources.",
+        noise: "No unsupported claims identified from the current sources.",
+        unknown: "Nothing is currently marked as unknown."
+      }[bucket];
+      return '<p class="bucket-empty">' + msg + '</p>';
+    }
 
-    var params = new URLSearchParams(window.location.search);
-    var savedParam  = params.get('saved');
-    var liveParam   = params.get('live');
-    var domainParam = params.get('domain');
+    function findingCard(f, i) {
+      var bodyId = "f-" + f.bucket + "-" + i;
+      var hasSources = f.sources && f.sources.length > 0;
+      return (
+        '<article class="finding" data-expanded="false">' +
+          '<button type="button" class="finding-head" aria-expanded="false" aria-controls="' + bodyId + '">' +
+            '<span class="finding-marker" aria-hidden="true"></span>' +
+            '<span class="finding-text">' +
+              '<span class="finding-title">' + esc(f.title) + '</span>' +
+              '<span class="finding-body">' + esc(f.body) + '</span>' +
+              '<span class="finding-source-count">' +
+                (hasSources ? f.sources.length + (f.sources.length === 1 ? " source" : " sources") : "No supporting source") +
+              '</span>' +
+            '</span>' +
+            '<span class="finding-toggle" aria-hidden="true">+</span>' +
+          '</button>' +
+          '<div class="finding-detail" id="' + bodyId + '" hidden>' +
+            (hasSources ? sourcesBlock(f.sources) : '<p class="no-source">No supporting source is attached to this finding.</p>') +
+          '</div>' +
+        '</article>'
+      );
+    }
 
-    if (savedParam) { runSaved(savedParam); return; }
+    function sourcesBlock(sources) {
+      return (
+        '<div class="sources">' +
+          '<p class="sources-title">Sources</p>' +
+          sources.map(function (s) {
+            return (
+              '<div class="source">' +
+                '<p class="source-line">' +
+                  '<span class="source-name">' + esc(s.name) + '</span>' +
+                  '<span class="source-meta"> · ' + esc(s.label) + (s.date ? " · " + esc(s.date) : "") + '</span>' +
+                '</p>' +
+                (s.detail ? '<p class="source-detail">' + esc(s.detail) + '</p>' : '') +
+                (s.url
+                  ? '<a class="source-link" href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">Open source ↗</a>'
+                  : '<p class="source-nolink">Demo source — no link available</p>') +
+              '</div>'
+            );
+          }).join("") +
+        '</div>'
+      );
+    }
 
-    if (liveParam) {
-      var pending = takePending();
-      if (!pending || String(pending.key) !== String(liveParam)) {
-        runDemo('> That research session expired (this can happen after a refresh). Start a new research to fetch live data. Showing the example report.');
-        return;
+    function toggleFinding(head) {
+      var card = head.closest(".finding");
+      var detail = card.querySelector(".finding-detail");
+      var expanded = card.getAttribute("data-expanded") === "true";
+      card.setAttribute("data-expanded", String(!expanded));
+      head.setAttribute("aria-expanded", String(!expanded));
+      detail.hidden = expanded;
+    }
+
+    function renderError(message) {
+      root.innerHTML =
+        '<p class="report-notice report-notice-error">&gt; ' + esc(message) + '</p>' +
+        '<a class="btn btn-ghost report-error-back" href="research.html">&larr; Back to research</a>';
+    }
+
+    /* ------------------------------------------------ init */
+
+    function init() {
+      var report = null;
+      var errorMessage = null;
+      var fallbackNote = null;
+
+      try { errorMessage = sessionStorage.getItem("sn.error"); } catch (e) {}
+      try { sessionStorage.removeItem("sn.error"); } catch (e) {}
+
+      if (errorMessage) { renderError(errorMessage); return; }
+
+      try { report = JSON.parse(sessionStorage.getItem("sn.currentReport") || "null"); } catch (e) {}
+      try { sessionStorage.removeItem("sn.currentReport"); } catch (e) {}
+
+      if (report && window.SN_STORE) {
+        var upgraded = SN_STORE.upgradeReport(report);
+        if (upgraded && upgraded.ok) {
+          report = upgraded.report;
+          if (upgraded.changed) fallbackNote = "This report was saved before structured evidence was added, so older entries may show less detail.";
+        } else {
+          report = null;
+          fallbackNote = "A saved report could not be loaded, so the demo report is shown instead.";
+        }
       }
-      runLive(pending.input);
-      return;
+
+      if (report) currentReport = report;
+      else {
+        currentReport = DEMO;
+        if (fallbackNote) currentReport = Object.assign({}, DEMO, { fallbackNote: fallbackNote });
+        currentReport.from = currentReport.from || (fallbackNote ? "fallback-demo" : "demo");
+      }
+
+      document.title = currentReport.project + " — Signal / Noise";
+      render();
     }
 
-    if (domainParam) { runLive(domainParam.trim().toLowerCase()); return; }
-
-    var stray = takePending();
-    if (stray && stray.input) { runLive(stray.input); return; }
-
-    runDemo();
-
+    init();
   })();
-</script>
-
+  </script>
 </body>
-</html>
+  </html>
