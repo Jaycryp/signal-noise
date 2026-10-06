@@ -1,10 +1,5 @@
 /* Signal / Noise — store.js
-   Saved research library (localStorage).
-   Stores reports in the report-page shape
-   { project, categories, findings } so saved reports
-   reopen from storage alone — never from the network.
-   Also reads legacy Stage 5 entries
-   { report: {...} } and upgrades them on read. */
+   Saved research library (localStorage). */
 
 (function () {
   'use strict';
@@ -24,93 +19,87 @@
     catch (e) { return false; }
   }
 
-  function normalise(entry) {
+  /* Convert any entry (new or legacy) into one canonical shape. */
+  function toReport(entry) {
     if (!entry) return null;
-
-    if (Array.isArray(entry.findings) && entry.project) {
-      return {
-        id: entry.id,
-        url: entry.url || (entry.project && entry.project.url) || null,
-        savedAt: entry.savedAt || null,
-        project: entry.project,
-        categories: entry.categories,
-        findings: entry.findings
-      };
-    }
-
-    if (entry.report && Array.isArray(entry.report.findings)) {
-      return {
-        id: entry.id,
-        url: entry.url || null,
-        savedAt: entry.savedAt || null,
-        project: entry.report.project || { name: entry.id },
-        categories: entry.report.categories,
-        findings: entry.report.findings
-      };
-    }
-
-    return null;
-  }
-
-  function upgradeAll(all) {
-    var changed = false;
-    var out = [];
-    all.forEach(function (e) {
-      if (e && Array.isArray(e.findings) && e.project) { out.push(e); return; }
-      var n = normalise(e);
-      if (n) { out.push(n); changed = true; }
-    });
-    if (changed) writeAll(out);
-    return out;
+    var r = (entry.report && Array.isArray(entry.report.findings)) ? entry.report : entry;
+    if (!Array.isArray(r.findings)) return null;
+    return {
+      id: entry.id || null,
+      savedAt: entry.savedAt || null,
+      kind: r.kind || 'basic',
+      project: (typeof r.project === 'string')
+        ? r.project
+        : (r.project && (r.project.name || r.project.url)) || 'Research report',
+      url: r.url || entry.url || (r.project && r.project.url) || '',
+      sourceLabel: r.sourceLabel || null,
+      checkedAt: r.checkedAt || entry.savedAt || null,
+      findings: r.findings,
+      categories: r.categories || null,
+      dossier: r.dossier || null,
+      from: 'saved'
+    };
   }
 
   window.SNStore = {
 
+    save: function (report) {
+      if (!report || !Array.isArray(report.findings)) return null;
+      var all = readAll();
+      var now = new Date().toISOString();
+      var url = report.url || null;
+
+      var entry = {
+        id: 'r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8),
+        url: url,
+        savedAt: now,
+        kind: report.kind || 'basic',
+        project: report.project,
+        sourceLabel: report.sourceLabel || null,
+        checkedAt: report.checkedAt || now,
+        findings: report.findings,
+        categories: report.categories || null,
+        dossier: report.dossier || null
+      };
+
+      /* Same URL saved again → update the existing entry. */
+      if (url) {
+        for (var i = 0; i < all.length; i++) {
+          var ex = toReport(all[i]);
+          if (ex && ex.url === url) {
+            entry.id = all[i].id || entry.id;
+            all[i] = entry;
+            return writeAll(all) ? entry : null;
+          }
+        }
+      }
+
+      all.push(entry);
+      return writeAll(all) ? entry : null;
+    },
+
     get: function (id) {
       var all = readAll();
       for (var i = 0; i < all.length; i++) {
-        if (all[i] && all[i].id === id) return normalise(all[i]);
+        if (all[i] && all[i].id === id) return toReport(all[i]);
+      }
+      return null;
+    },
+
+    findByUrl: function (url) {
+      if (!url) return null;
+      var all = readAll();
+      for (var i = all.length - 1; i >= 0; i--) {
+        var r = toReport(all[i]);
+        if (r && r.url === url) return r;
       }
       return null;
     },
 
     list: function () {
-      return upgradeAll(readAll()).slice().sort(function (a, b) {
+      return readAll().map(toReport).filter(Boolean).sort(function (a, b) {
         return String(b.savedAt || '').localeCompare(String(a.savedAt || ''));
       });
-    },
-
-    save: function (id, report, url) {
-      if (!report || !report.project) return null;
-      var all = readAll();
-      var now = new Date().toISOString();
-      var entryUrl = url || report.project.url || null;
-
-      if (entryUrl) {
-        for (var i = 0; i < all.length; i++) {
-          var n = normalise(all[i]);
-          if (n && n.url === entryUrl) {
-            all[i] = {
-              id: n.id, url: entryUrl, savedAt: now,
-              project: report.project,
-              categories: report.categories,
-              findings: report.findings
-            };
-            return writeAll(all) ? all[i] : null;
-          }
-        }
-      }
-
-      var entry = {
-        id: id || ('r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)),
-        url: entryUrl,
-        savedAt: now,
-        project: report.project,
-        categories: report.categories,
-        findings: report.findings
-      };
-      all.push(entry);
-      return writeAll(all) ? entry : null;
     },
 
     remove: function (id) {
