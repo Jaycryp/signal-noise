@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Saved research — Signal / Noise</title>
-<meta name="description" content="Your saved Signal / Noise research sessions.">
+<title>Projects — Signal / Noise</title>
+<meta name="description" content="Your saved Signal / Noise research.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ============ HEADER ============ -->
 <header>
   <div class="container header-inner">
     <a href="index.html" class="logo">
@@ -29,36 +28,15 @@
 
   <div class="projects-head">
     <h1>Saved research</h1>
-    <p class="projects-sub" id="projectsSub">Research sessions saved on this device.</p>
+    <p class="projects-sub">Reports you've saved live here, on this device only.</p>
   </div>
 
-  <!-- Empty state -->
-  <div id="emptyState" hidden>
-    <div class="empty-block">
-      <p class="empty-title">Nothing saved yet</p>
-      <p class="empty-desc">Research sessions you save will appear here.</p>
-      <a href="research.html" class="btn btn-primary">Start research →</a>
-    </div>
+  <div id="projects-root">
+    <p class="report-loading">Loading&hellip;</p>
   </div>
-
-  <!-- Saved list -->
-  <ul class="saved-list" id="savedList" hidden></ul>
 
 </main>
 
-<!-- Delete confirmation -->
-<div class="confirm-overlay" id="confirmOverlay" hidden>
-  <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <p class="confirm-title" id="confirmTitle">Delete this research?</p>
-    <p class="confirm-desc" id="confirmDesc"></p>
-    <div class="confirm-actions">
-      <button type="button" class="btn btn-secondary" id="confirmCancel">Cancel</button>
-      <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ FOOTER ============ -->
 <footer>
   <div class="container footer-inner">
     <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
@@ -66,160 +44,135 @@
   </div>
 </footer>
 
+<div class="confirm-overlay" id="confirmOverlay" hidden>
+  <div class="confirm-dialog" role="alertdialog" aria-labelledby="confirmTitle" aria-describedby="confirmDesc">
+    <h2 class="confirm-title" id="confirmTitle">Delete this research?</h2>
+    <p class="confirm-desc" id="confirmDesc"></p>
+    <div class="confirm-actions">
+      <button type="button" class="btn btn-ghost btn-compact" id="confirmCancel">Cancel</button>
+      <button type="button" class="btn btn-danger btn-compact" id="confirmDelete">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script src="store.js"></script>
 <script>
-  // ================================================
-  // SAVED RESEARCH LIBRARY
-  // Renders the SNStore contents. No fake entries:
-  // the list starts empty until the user saves.
-  // ================================================
+(function () {
+  "use strict";
 
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
-  }
+  var root = document.getElementById("projects-root");
+  var overlay = document.getElementById("confirmOverlay");
+  var confirmDesc = document.getElementById("confirmDesc");
+  var confirmCancel = document.getElementById("confirmCancel");
+  var confirmDelete = document.getElementById("confirmDelete");
+  var pendingDeleteId = null;
 
-  const savedList   = document.getElementById('savedList');
-  const emptyState  = document.getElementById('emptyState');
-  const projectsSub = document.getElementById('projectsSub');
-
-  const overlay       = document.getElementById('confirmOverlay');
-  const confirmDesc   = document.getElementById('confirmDesc');
-  const confirmCancel = document.getElementById('confirmCancel');
-  const confirmDelete = document.getElementById('confirmDelete');
-  let pendingDeleteId = null;
-  let lastFocusedEl   = null;
-
-  function pad2(n) {
-    return String(n).padStart(2, '0');
-  }
-
-  function countFor(report, key) {
-    if (!report || !Array.isArray(report.findings)) return 0;
-    return report.findings.filter(function (f) {
-      return f.category === key;
-    }).length;
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function formatDate(iso) {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return 'Unknown date';
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return pad2(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   }
 
-  function countChip(dotClass, label, count) {
-    const chip = el('span', 'saved-chip');
-    chip.appendChild(el('span', 'dot ' + dotClass));
-    chip.appendChild(document.createTextNode(label + ' ' + pad2(count)));
-    return chip;
+  function countBucket(findings, bucket) {
+    var n = 0;
+    (findings || []).forEach(function (f) { if (f.bucket === bucket) n++; });
+    return n;
   }
 
-  function buildRow(item) {
-    const li = el('li', 'saved-item');
-
-    const main = el('div', 'saved-main');
-
-    const title = el('p', 'saved-name');
-    const name = (item.report && item.report.project && item.report.project.name) || item.id;
-    title.textContent = name;
-
-    const idLine = el('p', 'saved-id', item.url || item.id);
-
-    const counts = el('p', 'saved-counts');
-    counts.appendChild(countChip('dot-signal', 'Signal', countFor(item.report, 'signal')));
-    counts.appendChild(countChip('dot-noise', 'Noise', countFor(item.report, 'noise')));
-    counts.appendChild(countChip('dot-unknown', 'Unknown', countFor(item.report, 'unknown')));
-
-    const date = el('p', 'saved-date', 'Saved · ' + formatDate(item.savedAt));
-
-    main.appendChild(title);
-    main.appendChild(idLine);
-    main.appendChild(counts);
-    main.appendChild(date);
-
-    const actions = el('div', 'saved-actions');
-
-    const open = document.createElement('a');
-    open.className = 'btn btn-secondary btn-compact';
-    open.href = 'report.html?saved=' + encodeURIComponent(item.id);
-    open.textContent = 'Open';
-    open.setAttribute('aria-label', 'Open saved research for ' + name);
-
-    const del = el('button', 'btn btn-ghost btn-compact', 'Delete');
-    del.type = 'button';
-    del.setAttribute('aria-label', 'Delete saved research for ' + name);
-    del.addEventListener('click', function () {
-      askDelete(item.id, name);
-    });
-
-    actions.appendChild(open);
-    actions.appendChild(del);
-
-    li.appendChild(main);
-    li.appendChild(actions);
-    return li;
+  function chip(bucket, label, n) {
+    return '<span class="saved-chip">' +
+      '<span class="dot dot-' + bucket + '" aria-hidden="true"></span>' +
+      label + ' ' + String(n).padStart(2, "0") +
+    '</span>';
   }
 
   function render() {
-    const items = SNStore.list();
+    var entries = window.SNStore ? SNStore.list() : [];
 
-    if (items.length === 0) {
-      savedList.hidden = true;
-      emptyState.hidden = false;
-      projectsSub.textContent = 'Research sessions saved on this device.';
+    if (!entries.length) {
+      root.innerHTML =
+        '<div class="empty-block">' +
+          '<p class="empty-title">No saved research yet</p>' +
+          '<p class="empty-desc">Run a research and save it — it will appear here.</p>' +
+          '<a class="btn btn-primary btn-compact" href="research.html">Research a project</a>' +
+        '</div>';
       return;
     }
 
-    emptyState.hidden = true;
-    savedList.hidden = false;
-    savedList.innerHTML = '';
-    items.forEach(function (item) {
-      savedList.appendChild(buildRow(item));
+    var html = '<ul class="saved-list">';
+    entries.forEach(function (e) {
+      var s = countBucket(e.findings, "signal");
+      var n = countBucket(e.findings, "noise");
+      var u = countBucket(e.findings, "unknown");
+      html +=
+        '<li class="saved-item">' +
+          '<div class="saved-main">' +
+            '<p class="saved-name">' + esc(e.project) + '</p>' +
+            '<p class="saved-id">' + esc(e.url || e.id) + '</p>' +
+            '<div class="saved-counts">' +
+              chip("signal", "Signal", s) +
+              chip("noise", "Noise", n) +
+              chip("unknown", "Unknown", u) +
+            '</div>' +
+            '<p class="saved-date">Saved ' + esc(formatDate(e.savedAt) || "unknown") + '</p>' +
+          '</div>' +
+          '<div class="saved-actions">' +
+            '<a class="btn btn-secondary btn-compact" href="report.html?id=' + encodeURIComponent(e.id) + '">Open</a>' +
+            '<button type="button" class="btn btn-ghost btn-compact" data-delete="' + esc(e.id) + '" data-name="' + esc(e.project) + '">Delete</button>' +
+          '</div>' +
+        '</li>';
     });
+    html += '</ul>';
 
-    projectsSub.textContent =
-      items.length + (items.length === 1 ? ' research session' : ' research sessions') +
-      ' saved on this device.';
+    root.innerHTML = html;
+
+    root.querySelectorAll("[data-delete]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        pendingDeleteId = btn.getAttribute("data-delete");
+        confirmDesc.textContent = btn.getAttribute("data-name") + " will be removed from this device. This cannot be undone.";
+        overlay.hidden = false;
+        confirmDelete.focus();
+      });
+    });
   }
 
-  // ---- Delete confirmation ----
-
-  function askDelete(id, name) {
-    pendingDeleteId = id;
-    lastFocusedEl = document.activeElement;
-    confirmDesc.textContent = '"' + name + '" will be removed from saved research on this device.';
-    overlay.hidden = false;
-    confirmDelete.focus();
-  }
-
-  function closeConfirm() {
-    overlay.hidden = true;
+  confirmCancel.addEventListener("click", function () {
     pendingDeleteId = null;
-    if (lastFocusedEl) lastFocusedEl.focus();
-  }
+    overlay.hidden = true;
+  });
 
-  confirmCancel.addEventListener('click', closeConfirm);
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) {
+      pendingDeleteId = null;
+      overlay.hidden = true;
+    }
+  });
 
-  confirmDelete.addEventListener('click', function () {
-    if (pendingDeleteId !== null) {
+  confirmDelete.addEventListener("click", function () {
+    if (pendingDeleteId && window.SNStore) {
       SNStore.remove(pendingDeleteId);
     }
-    closeConfirm();
+    pendingDeleteId = null;
+    overlay.hidden = true;
     render();
   });
 
-  overlay.addEventListener('click', function (event) {
-    if (event.target === overlay) closeConfirm();
-  });
-
-  document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && !overlay.hidden) closeConfirm();
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !overlay.hidden) {
+      pendingDeleteId = null;
+      overlay.hidden = true;
+    }
   });
 
   render();
+})();
 </script>
 
 </body>
