@@ -298,8 +298,8 @@ const SN_SOURCES = (() => {
       ghOptional(base + "/license"),
       ghOptional(base + "/readme"),
       ghOptional(base + "/contributors" + perPage(100)),
-      ghOptional(base + "/commits" + "?since=" +
-        new Date(Date.now() - 30 * 86400000).toISOString() + perPage(100)),
+            ghOptional(base + "/commits?since=" +
+        new Date(Date.now() - 30 * 86400000).toISOString() + "&per_page=100"),
       ghOptional(base + "/releases" + perPage(10))
     ]);
 
