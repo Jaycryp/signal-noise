@@ -71,31 +71,36 @@
     var input = document.getElementById('researchInput');
     var hint  = document.getElementById('inputHint');
     var error = document.getElementById('inputError');
+    var btn   = form.querySelector('button');
 
     function detectType(v) {
-      if (!v) return null;
-      var lower = v.toLowerCase();
-      if (lower.includes('github.com/')) {
-        var parts = lower.split('github.com/')[1].split('/').filter(Boolean);
-        if (parts.length >= 2) return 'github_repo';
-        return 'github_page';
+      if (!v) return 'empty';
+      var lower = v.toLowerCase().trim();
+      if (lower.indexOf('github.com/') !== -1) {
+        var after = lower.split('github.com/')[1] || '';
+        var parts = after.split('/').filter(Boolean);
+        return parts.length >= 2 ? 'github_repo' : 'github_page';
       }
-      if (lower.startsWith('http') || lower.includes('.')) return 'website';
+      if (/^https?:\/\//.test(lower)) return 'website';
+      if (lower.indexOf(' ') !== -1) return 'invalid';
+      if (/^[a-z0-9-]+(\.[a-z0-9-]+)+/.test(lower)) return 'website';
       return 'invalid';
     }
 
     input.addEventListener('input', function () {
       error.hidden = true;
+      input.classList.remove('invalid', 'valid');
       var v = input.value.trim();
-      if (!v) { hint.hidden = true; return; }
+      if (!v) { hint.hidden = true; hint.textContent = ''; return; }
 
       var type = detectType(v);
       hint.className = 'field-message';
-      
+
       if (type === 'github_repo') {
         hint.textContent = '> GitHub repository detected — public data will be retrieved from the GitHub API.';
         hint.className = 'field-message ok';
         hint.hidden = false;
+        input.classList.add('valid');
       } else if (type === 'github_page') {
         hint.textContent = '> That looks like a GitHub page, not a repository. A basic research record will be created.';
         hint.hidden = false;
@@ -110,41 +115,47 @@
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       var v = input.value.trim();
-      
-      if (!v) {
-        error.textContent = '> Please enter a project URL.';
+      var type = detectType(v);
+
+      if (!v || type === 'invalid') {
+        hint.hidden = true;
+        error.textContent = "> That doesn't look like a valid URL. Check it and try again.";
         error.hidden = false;
+        input.classList.add('invalid');
         input.focus();
         return;
       }
 
-      try {
-        error.hidden = true;
-        hint.hidden = true;
-        
-        // Show loading state
-        var btn = form.querySelector('button');
-        var originalText = btn.textContent;
-        btn.textContent = 'Researching...';
-        btn.disabled = true;
+      if (typeof SN_SOURCES === 'undefined' || !SN_SOURCES.research) {
+        error.textContent = '> Research engine failed to load. Refresh the page and try again.';
+        error.hidden = false;
+        return;
+      }
 
-        // Call the actual research function
+      error.hidden = true;
+      hint.hidden = true;
+      input.classList.remove('invalid');
+      btn.textContent = 'Researching…';
+      btn.disabled = true;
+      input.disabled = true;
+
+      try {
         var report = await SN_SOURCES.research(v);
-        
-        // Store in sessionStorage and redirect
         var key = 'k' + Date.now().toString(36);
-        sessionStorage.setItem('sn.pending', JSON.stringify({ key: key, report: report }));
+        try {
+          sessionStorage.setItem('sn.pending', JSON.stringify({ key: key, report: report }));
+        } catch (storeErr) {}
         window.location.href = 'report.html?live=' + encodeURIComponent(key);
-        
       } catch (err) {
         btn.textContent = 'Research';
         btn.disabled = false;
-        error.textContent = '> ' + (err.message || 'Research failed. Please try again.');
+        input.disabled = false;
+        error.textContent = '> ' + (err && err.message ? err.message : 'Research failed. Please try again.');
         error.hidden = false;
       }
     });
   })();
-          </script>
+      </script>
 
 </body>
 </html>
