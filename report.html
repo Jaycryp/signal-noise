@@ -1,468 +1,469 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Report — Signal / Noise</title>
-  <meta name="description" content="A Signal / Noise research report — evidence-backed findings, clearly separated from unknowns.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report — Signal / Noise</title>
+<meta name="description" content="A Signal / Noise research report — evidence-backed findings, clearly separated from unknowns.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="wordmark" href="index.html">SIGNAL<span>/</span>NOISE</a>
-      <nav class="site-nav" aria-label="Primary">
-        <a href="index.html">Home</a>
-        <a href="research.html">Research</a>
-        <a href="projects.html">Projects</a>
-      </nav>
-    </div>
-  </header>
+<header>
+  <div class="container header-inner">
+    <a href="index.html" class="logo">
+      SIGNAL <span class="slash">/</span> NOISE
+    </a>
+    <nav>
+      <a href="research.html">Research</a>
+      <a href="projects.html">Projects</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </div>
+</header>
 
-  <main>
-    <section class="section report-section">
-      <div class="wrap report-wrap">
+<main class="container-report">
 
-        <a class="report-back" href="research.html">&larr; Back to research</a>
+  <a class="back-link" href="research.html">&larr; Back to research</a>
 
-        <div id="report-root">
-          <p class="report-loading">Loading report&hellip;</p>
-        </div>
+  <div id="report-root">
+    <p class="report-loading">Loading report&hellip;</p>
+  </div>
 
-      </div>
-    </section>
-  </main>
+</main>
 
-  <footer class="site-footer">
-    <div class="wrap footer-inner">
-      <p>Signal / Noise is a research tool for Web3 projects. It checks claims against available sources. Nothing here is financial advice.</p>
-      <p class="footer-mark">SIGNAL<span>/</span>NOISE</p>
-    </div>
-  </footer>
+<footer>
+  <div class="container footer-inner">
+    <p>Signal / Noise is a research tool for Web3 projects. It checks claims against sources. Nothing here is financial advice.</p>
+    <span class="footer-logo">SIGNAL / NOISE</span>
+  </div>
+</footer>
 
-  <script src="store.js"></script>
-  <script>
-  (function () {
-    "use strict";
+<script src="store.js"></script>
+<script>
+(function () {
+  "use strict";
 
-    var root = document.getElementById("report-root");
+  var root = document.getElementById("report-root");
 
-    /* ------------------------------------------------ demo report */
-    var DEMO = {
-      project: "Northstar",
-      url: "northstarprotocol.xyz",
-      kind: "demo",
-      findings: [
-        {
-          bucket: "signal",
-          title: "Public code repository",
-          body: "The project maintains a public code repository that can be inspected by anyone.",
-          sources: [
-            { name: "github.com/Jaycryp/signal-noise", label: "Project website", date: "24 Sep 2026",
-              url: "https://github.com/Jaycryp/signal-noise",
-              detail: "Linked directly from the project homepage. Contents are publicly viewable." }
-          ]
-        },
-        {
-          bucket: "signal",
-          title: "Published documentation",
-          body: "Technical documentation is published and covers the protocol\u2019s core mechanics.",
-          sources: [
-            { name: "docs.northstarprotocol.xyz", label: "Documentation", date: "24 Sep 2026", url: null,
-              detail: "Documentation describes the protocol architecture and token mechanics." }
-          ]
-        },
-        {
-          bucket: "signal",
-          title: "Identifiable team members",
-          body: "Two team members are publicly named with verifiable professional histories.",
-          sources: [
-            { name: "northstarprotocol.xyz/team", label: "Project website", date: "24 Sep 2026", url: null,
-              detail: "Names and roles listed. Professional profiles cross-checked." }
-          ]
-        },
-        {
-          bucket: "noise",
-          title: "\u201CBacked by leading investors\u201D",
-          body: "The website claims backing from leading investors but names none of them.",
-          sources: [
-            { name: "northstarprotocol.xyz", label: "Project website", date: "24 Sep 2026", url: null,
-              detail: "Claim appears on the homepage. No investor names, announcements, or filings found." }
-          ]
-        },
-        {
-          bucket: "noise",
-          title: "\u201CAudited smart contracts\u201D",
-          body: "An audit is mentioned, but no audit report or auditor name is provided.",
-          sources: [
-            { name: "northstarprotocol.xyz", label: "Project website", date: "24 Sep 2026", url: null,
-              detail: "Audit referenced in marketing copy. No report linked or found elsewhere." }
-          ]
-        },
-        {
-          bucket: "unknown",
-          title: "Token distribution",
-          body: "No public breakdown of token allocation was found during this research session.",
-          sources: []
-        },
-        {
-          bucket: "unknown",
-          title: "Treasury management",
-          body: "No information found about how project funds are held or managed.",
-          sources: []
-        },
-        {
-          bucket: "unknown",
-          title: "On-chain activity",
-          body: "On-chain data sources are not yet connected in this version of the tool.",
-          sources: []
-        },
-        {
-          bucket: "unknown",
-          title: "Regulatory status",
-          body: "No regulatory filings or registrations were identified during this session.",
-          sources: []
-        }
-      ]
+  /* ------------------------------------------------ demo report */
+  var DEMO = {
+    project: "Northstar",
+    url: "northstarprotocol.xyz",
+    kind: "demo",
+    checkedAt: null,
+    findings: [
+      { bucket: "signal", title: "Public code repository",
+        body: "The project maintains a public code repository that can be inspected by anyone.",
+        sources: [
+          { name: "github.com/Jaycryp/signal-noise", label: "Project website", date: "24 Sep 2026",
+            url: "https://github.com/Jaycryp/signal-noise",
+            detail: "Linked directly from the project homepage. Contents are publicly viewable." }
+        ] },
+      { bucket: "signal", title: "Published documentation",
+        body: "Technical documentation is published and covers the protocol\u2019s core mechanics.",
+        sources: [
+          { name: "docs.northstarprotocol.xyz", label: "Documentation", date: "24 Sep 2026", url: null,
+            detail: "Documentation describes the protocol architecture and token mechanics." }
+        ] },
+      { bucket: "signal", title: "Identifiable team members",
+        body: "Two team members are publicly named with verifiable professional histories.",
+        sources: [
+          { name: "northstarprotocol.xyz/team", label: "Project website", date: "24 Sep 2026", url: null,
+            detail: "Names and roles listed. Professional profiles cross-checked." }
+        ] },
+      { bucket: "noise", title: "\u201CBacked by leading investors\u201D",
+        body: "The website claims backing from leading investors but names none of them.",
+        sources: [
+          { name: "northstarprotocol.xyz", label: "Project website", date: "24 Sep 2026", url: null,
+            detail: "Claim appears on the homepage. No investor names, announcements, or filings found." }
+        ] },
+      { bucket: "noise", title: "\u201CAudited smart contracts\u201D",
+        body: "An audit is mentioned, but no audit report or auditor name is provided.",
+        sources: [
+          { name: "northstarprotocol.xyz", label: "Project website", date: "24 Sep 2026", url: null,
+            detail: "Audit referenced in marketing copy. No report linked or found elsewhere." }
+        ] },
+      { bucket: "unknown", title: "Token distribution",
+        body: "No public breakdown of token allocation was found during this research session.",
+        sources: [] },
+      { bucket: "unknown", title: "Treasury management",
+        body: "No information found about how project funds are held or managed.",
+        sources: [] },
+      { bucket: "unknown", title: "On-chain activity",
+        body: "On-chain data sources are not yet connected in this version of the tool.",
+        sources: [] },
+      { bucket: "unknown", title: "Regulatory status",
+        body: "No regulatory filings or registrations were identified during this session.",
+        sources: [] }
+    ]
+  };
+
+  var BUCKETS = ["signal", "noise", "unknown"];
+  var BUCKET_META = {
+    signal:  { label: "Signal",  desc: "Information supported by available sources." },
+    noise:   { label: "Noise",   desc: "Claims or statements that need further checking." },
+    unknown: { label: "Unknown", desc: "Information that has not been established in this research session." }
+  };
+  var KIND_LABELS = { github: "Live research · GitHub", basic: "Research record", demo: "Demo report" };
+  var activeFilter = "all";
+  var currentReport = null;
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function normalizeShape(r) {
+    return {
+      kind: r.kind || "basic",
+      project: (typeof r.project === "string")
+        ? r.project
+        : (r.project && (r.project.name || r.project.url)) || "Research report",
+      url: r.url || "",
+      sourceLabel: r.sourceLabel || null,
+      checkedAt: r.checkedAt || r.savedAt || null,
+      findings: Array.isArray(r.findings) ? r.findings : [],
+      dossier: r.dossier || null,
+      from: r.from || null
     };
+  }
 
-    var BUCKETS = ["signal", "noise", "unknown"];
-    var BUCKET_META = {
-      signal:  { label: "Signal",  desc: "Information supported by available sources." },
-      noise:   { label: "Noise",   desc: "Claims or statements that need further checking." },
-      unknown: { label: "Unknown", desc: "Information that has not been established in this research session." }
-    };
-    var KIND_LABELS = { github: "Live research · GitHub", basic: "Research record", demo: "Demo report" };
-    var activeFilter = "all";
-    var currentReport = null;
+  function byBucket(bucket) {
+    return currentReport.findings.filter(function (f) { return f.bucket === bucket; });
+  }
 
-    function esc(value) {
-      return String(value)
-        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  function counts() {
+    var c = { signal: 0, noise: 0, unknown: 0 };
+    currentReport.findings.forEach(function (f) {
+      if (c[f.bucket] !== undefined) c[f.bucket]++;
+    });
+    return c;
+  }
+
+  function formatChecked(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  /* ------------------------------------------------ render */
+
+  function render() {
+    var c = counts();
+    var kindLabel = KIND_LABELS[currentReport.kind] || "Research report";
+    var checked = formatChecked(currentReport.checkedAt);
+    var isDemo = currentReport.kind === "demo";
+    var savedEntry = (!isDemo && window.SNStore) ? SNStore.findByUrl(currentReport.url) : null;
+    var from = currentReport.from;
+    var sessionNote = "";
+
+    if (from === "saved") {
+      sessionNote = '<p class="report-notice">Opened from your saved research. Last checked ' + esc(checked || "unknown") + ".</p>";
+    } else if (from === "fallback-demo") {
+      sessionNote = '<p class="report-notice">That research session expired after a refresh, so the demo report is shown. Run a new research to generate a live one.</p>';
+    } else if (from === "session") {
+      sessionNote = '<p class="report-notice">Session started for: <span class="report-notice-url">' + esc(currentReport.url) + "</span></p>";
     }
 
-    function byBucket(bucket) {
-      return currentReport.findings.filter(function (f) { return f.bucket === bucket; });
-    }
+    var dossier = currentReport.dossier || null;
+    var d = dossier || {};
+    var sourceLine = currentReport.sourceLabel ||
+      (isDemo ? "Source: demo data" : (currentReport.kind === "github" ? "Source: GitHub" : "Source: user-submitted URL"));
 
-    function counts() {
-      var c = { signal: 0, noise: 0, unknown: 0 };
-      currentReport.findings.forEach(function (f) {
-        if (c[f.bucket] !== undefined) c[f.bucket]++;
-      });
-      return c;
-    }
-
-    function formatChecked(iso) {
-      if (!iso) return "";
-      var d = new Date(iso);
-      if (isNaN(d.getTime())) return "";
-      return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-    }
-
-    /* ------------------------------------------------ render */
-
-    function render() {
-      var c = counts();
-      var kindLabel = KIND_LABELS[currentReport.kind] || "Research report";
-      var checked = formatChecked(currentReport.checkedAt);
-      var isDemo = currentReport.kind === "demo";
-      var savedEntry = !isDemo && window.SN_STORE ? SN_STORE.findByUrl(currentReport.url) : null;
-      var from = currentReport.from;
-      var sessionNote = "";
-
-      if (from === "saved") {
-        sessionNote = '<p class="report-notice">Opened from your saved research. Last checked ' + esc(checked || "unknown") + ".</p>";
-      } else if (from === "fallback-demo") {
-        sessionNote = '<p class="report-notice">That research session expired after a refresh, so the demo report is shown. Run a new research to generate a live one.</p>';
-      } else if (from === "session") {
-        sessionNote = '<p class="report-notice">Session started for: <span class="report-notice-url">' + esc(currentReport.url) + "</span></p>";
-      }
-
-      var headerNote = currentReport.fallbackNote
-        ? '<p class="report-notice">' + esc(currentReport.fallbackNote) + "</p>"
-        : "";
-
-      var dossier = currentReport.dossier || null;
-      var d = dossier || {};
-      var sourceLine = isDemo ? "Source: demo data" : (currentReport.kind === "github" ? "Source: GitHub" : "Source: user-submitted URL");
-
-      var html =
-        sessionNote +
-        '<div class="report-head">' +
-          '<div class="report-head-main">' +
-            '<p class="report-eyebrow">' + esc(kindLabel) + '</p>' +
-            '<h1 class="report-title">' + esc(currentReport.project) + '</h1>' +
-            '<p class="report-url">' + esc(currentReport.url) + '</p>' +
-            (d.description ? '<p class="report-desc">' + esc(d.description) + '</p>' : '') +
-            '<p class="report-source-line">' + esc(sourceLine) + '</p>' +
-            (isDemo ? '<span class="demo-badge">Example report — fictional data</span>' : '') +
-          '</div>' +
-          (!isDemo ?
-            '<div class="report-head-actions">' +
-              '<button type="button" class="btn-save" id="btn-save" data-saved="' + (savedEntry ? "true" : "false") + '">' +
-                (savedEntry ? "Saved ✓" : "Save research") +
-              '</button>' +
-              (savedEntry ? '<p class="save-note">Saved ' + esc(formatChecked(savedEntry.savedAt) || "") + '</p>' : '') +
-            '</div>'
-          : '') +
+    var html =
+      sessionNote +
+      '<div class="report-head">' +
+        '<div class="report-head-main">' +
+          '<p class="report-eyebrow">' + esc(kindLabel) + '</p>' +
+          '<h1 class="report-title">' + esc(currentReport.project) + '</h1>' +
+          '<p class="report-url">' + esc(currentReport.url) + '</p>' +
+          (d.description ? '<p class="report-desc">' + esc(d.description) + '</p>' : '') +
+          '<p class="report-source-line">' + esc(sourceLine) + (checked ? " · Checked " + esc(checked) : "") + '</p>' +
+          (isDemo ? '<span class="demo-badge">Example report — fictional data</span>' : '') +
         '</div>' +
-        headerNote +
-        (d.rows ? renderDossier(d) : '') +
-        renderReadme(d) +
-        renderSummary(c) +
-        renderFilters(c) +
-        '<div id="findings-root">' + renderFindings() + '</div>';
+        (!isDemo ?
+          '<div class="report-head-actions">' +
+            '<button type="button" class="btn-save" id="btn-save" data-saved="' + (savedEntry ? "true" : "false") + '">' +
+              (savedEntry ? "Saved ✓" : "Save research") +
+            '</button>' +
+            (savedEntry ? '<p class="save-note">Saved ' + esc(formatChecked(savedEntry.savedAt) || "") + '</p>' : '') +
+          '</div>'
+        : '') +
+      '</div>' +
+      (d.rows ? renderDossier(d) : '') +
+      renderReadme(d) +
+      renderSummary(c) +
+      renderFilters(c) +
+      '<div id="findings-root">' + renderFindings() + '</div>';
 
-      root.innerHTML = html;
+    root.innerHTML = html;
+    bindFindingEvents();
 
-      document.querySelectorAll(".finding-head").forEach(function (head) {
-        head.addEventListener("click", function () { toggleFinding(head); });
-        head.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFinding(head); }
+    document.querySelectorAll(".filter-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        activeFilter = btn.getAttribute("data-filter");
+        document.querySelectorAll(".filter-btn").forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
         });
+        document.getElementById("findings-root").innerHTML = renderFindings();
+        bindFindingEvents();
       });
+    });
 
-      document.querySelectorAll(".filter-btn").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          activeFilter = btn.getAttribute("data-filter");
-          document.querySelectorAll(".filter-btn").forEach(function (b) {
-            var on = b === btn;
-            b.classList.toggle("is-active", on);
-            b.setAttribute("aria-pressed", on ? "true" : "false");
-          });
-          document.getElementById("findings-root").innerHTML = renderFindings();
-          bindFindingEvents();
-        });
-      });
-
-      var saveBtn = document.getElementById("btn-save");
-      if (saveBtn) {
-        saveBtn.addEventListener("click", function () {
-          if (saveBtn.getAttribute("data-saved") === "true") return;
-          SN_STORE.saveReport(currentReport);
-          saveBtn.setAttribute("data-saved", "true");
-          saveBtn.textContent = "Saved ✓";
-          var note = document.querySelector(".save-note");
-          if (!note) {
-            note = document.createElement("p");
-            note.className = "save-note";
-            saveBtn.parentNode.appendChild(note);
-          }
-          note.textContent = "Saved " + formatChecked(new Date().toISOString());
-        });
-      }
-    }
-
-    function renderDossier(d) {
-      var rows = d.rows.map(function (pair) {
-        return '<div class="dossier-row">' +
-          '<dt class="dossier-key">' + esc(pair[0]) + '</dt>' +
-          '<dd class="dossier-val">' + esc(pair[1]) + '</dd>' +
-        '</div>';
-      }).join("");
-      return '<section class="dossier" aria-label="Repository metadata">' +
-        '<h2 class="dossier-title">Repository</h2>' +
-        '<dl class="dossier-grid">' + rows + '</dl>' +
-      '</section>';
-    }
-
-    function renderReadme(d) {
-      if (!("readme" in d)) return "";
-      var inner;
-      if (d.readme && d.readme.excerpt) {
-        inner = '<pre class="readme-excerpt">' + esc(d.readme.excerpt) + '</pre>' +
-          '<a class="source-link" href="' + esc(d.readme.url) + '" target="_blank" rel="noopener noreferrer">Read full README on GitHub ↗</a>';
-      } else {
-        inner = '<p class="readme-missing">No README reported by GitHub for this repository.</p>';
-      }
-      return '<section class="readme-block" aria-label="README">' +
-        '<h2 class="dossier-title">README</h2>' + inner +
-      '</section>';
-    }
-
-    function bindFindingEvents() {
-      document.querySelectorAll(".finding-head").forEach(function (head) {
-        head.addEventListener("click", function () { toggleFinding(head); });
-        head.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFinding(head); }
-        });
-      });
-    }
-
-    function renderSummary(c) {
-      return (
-        '<section class="report-summary" aria-label="Findings summary">' +
-          '<p class="summary-title">Findings in this report</p>' +
-          '<div class="summary-grid">' +
-            summaryCell("signal", c.signal) +
-            summaryCell("noise", c.noise) +
-            summaryCell("unknown", c.unknown) +
-          '</div>' +
-        '</section>'
-      );
-    }
-
-    function summaryCell(bucket, n) {
-      return (
-        '<div class="summary-cell summary-' + bucket + '">' +
-          '<span class="summary-label">' + BUCKET_META[bucket].label + '</span>' +
-          '<span class="summary-count">' + String(n).padStart(2, "0") + '</span>' +
-        '</div>'
-      );
-    }
-
-    function renderFilters(c) {
-      var total = c.signal + c.noise + c.unknown;
-      return (
-        '<div class="report-filters" role="group" aria-label="Filter findings">' +
-          filterBtn("all", "All", total) +
-          filterBtn("signal", "Signal", c.signal) +
-          filterBtn("noise", "Noise", c.noise) +
-          filterBtn("unknown", "Unknown", c.unknown) +
-        '</div>'
-      );
-    }
-
-    function filterBtn(key, label, n) {
-      var active = activeFilter === key ? " is-active" : "";
-      return (
-        '<button type="button" class="filter-btn' + active + '" data-filter="' + key + '" aria-pressed="' + (activeFilter === key) + '">' +
-          label + ' <span class="filter-count">' + String(n).padStart(2, "0") + '</span>' +
-        '</button>'
-      );
-    }
-
-    function renderFindings() {
-      var html = "";
-      BUCKETS.forEach(function (bucket) {
-        if (activeFilter !== "all" && activeFilter !== bucket) return;
-        var items = byBucket(bucket);
-        html +=
-          '<section class="bucket bucket-' + bucket + '">' +
-            '<header class="bucket-head">' +
-              '<h2 class="bucket-title">' + BUCKET_META[bucket].label + '</h2>' +
-              '<p class="bucket-desc">' + BUCKET_META[bucket].desc + '</p>' +
-            '</header>' +
-            (items.length ? items.map(findingCard).join("") : emptyState(bucket)) +
-          '</section>';
-      });
-      return html;
-    }
-
-    function emptyState(bucket) {
-      var msg = {
-        signal: "No verified findings were established from the current sources.",
-        noise: "No unsupported claims identified from the current sources.",
-        unknown: "Nothing is currently marked as unknown."
-      }[bucket];
-      return '<p class="bucket-empty">' + msg + '</p>';
-    }
-
-    function findingCard(f, i) {
-      var bodyId = "f-" + f.bucket + "-" + i;
-      var hasSources = f.sources && f.sources.length > 0;
-      return (
-        '<article class="finding" data-expanded="false">' +
-          '<button type="button" class="finding-head" aria-expanded="false" aria-controls="' + bodyId + '">' +
-            '<span class="finding-marker" aria-hidden="true"></span>' +
-            '<span class="finding-text">' +
-              '<span class="finding-title">' + esc(f.title) + '</span>' +
-              '<span class="finding-body">' + esc(f.body) + '</span>' +
-              '<span class="finding-source-count">' +
-                (hasSources ? f.sources.length + (f.sources.length === 1 ? " source" : " sources") : "No supporting source") +
-              '</span>' +
-            '</span>' +
-            '<span class="finding-toggle" aria-hidden="true">+</span>' +
-          '</button>' +
-          '<div class="finding-detail" id="' + bodyId + '" hidden>' +
-            (hasSources ? sourcesBlock(f.sources) : '<p class="no-source">No supporting source is attached to this finding.</p>') +
-          '</div>' +
-        '</article>'
-      );
-    }
-
-    function sourcesBlock(sources) {
-      return (
-        '<div class="sources">' +
-          '<p class="sources-title">Sources</p>' +
-          sources.map(function (s) {
-            return (
-              '<div class="source">' +
-                '<p class="source-line">' +
-                  '<span class="source-name">' + esc(s.name) + '</span>' +
-                  '<span class="source-meta"> · ' + esc(s.label) + (s.date ? " · " + esc(s.date) : "") + '</span>' +
-                '</p>' +
-                (s.detail ? '<p class="source-detail">' + esc(s.detail) + '</p>' : '') +
-                (s.url
-                  ? '<a class="source-link" href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">Open source ↗</a>'
-                  : '<p class="source-nolink">Demo source — no link available</p>') +
-              '</div>'
-            );
-          }).join("") +
-        '</div>'
-      );
-    }
-
-    function toggleFinding(head) {
-      var card = head.closest(".finding");
-      var detail = card.querySelector(".finding-detail");
-      var expanded = card.getAttribute("data-expanded") === "true";
-      card.setAttribute("data-expanded", String(!expanded));
-      head.setAttribute("aria-expanded", String(!expanded));
-      detail.hidden = expanded;
-    }
-
-    function renderError(message) {
-      root.innerHTML =
-        '<p class="report-notice report-notice-error">&gt; ' + esc(message) + '</p>' +
-        '<a class="btn btn-ghost report-error-back" href="research.html">&larr; Back to research</a>';
-    }
-
-    /* ------------------------------------------------ init */
-
-    function init() {
-      var report = null;
-      var errorMessage = null;
-      var fallbackNote = null;
-
-      try { errorMessage = sessionStorage.getItem("sn.error"); } catch (e) {}
-      try { sessionStorage.removeItem("sn.error"); } catch (e) {}
-
-      if (errorMessage) { renderError(errorMessage); return; }
-
-      try { report = JSON.parse(sessionStorage.getItem("sn.currentReport") || "null"); } catch (e) {}
-      try { sessionStorage.removeItem("sn.currentReport"); } catch (e) {}
-
-      if (report && window.SN_STORE) {
-        var upgraded = SN_STORE.upgradeReport(report);
-        if (upgraded && upgraded.ok) {
-          report = upgraded.report;
-          if (upgraded.changed) fallbackNote = "This report was saved before structured evidence was added, so older entries may show less detail.";
-        } else {
-          report = null;
-          fallbackNote = "A saved report could not be loaded, so the demo report is shown instead.";
+    var saveBtn = document.getElementById("btn-save");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        if (saveBtn.getAttribute("data-saved") === "true") return;
+        if (!window.SNStore) return;
+        var entry = SNStore.save(currentReport);
+        if (!entry) return;
+        saveBtn.setAttribute("data-saved", "true");
+        saveBtn.textContent = "Saved ✓";
+        var note = saveBtn.parentNode.querySelector(".save-note");
+        if (!note) {
+          note = document.createElement("p");
+          note.className = "save-note";
+          saveBtn.parentNode.appendChild(note);
         }
-      }
+        note.textContent = "Saved " + formatChecked(new Date().toISOString());
+      });
+    }
+  }
 
-      if (report) currentReport = report;
-      else {
-        currentReport = DEMO;
-        if (fallbackNote) currentReport = Object.assign({}, DEMO, { fallbackNote: fallbackNote });
-        currentReport.from = currentReport.from || (fallbackNote ? "fallback-demo" : "demo");
-      }
+  function renderDossier(d) {
+    var rows = d.rows.map(function (pair) {
+      return '<div class="dossier-row">' +
+        '<dt class="dossier-key">' + esc(pair[0]) + '</dt>' +
+        '<dd class="dossier-val">' + esc(pair[1]) + '</dd>' +
+      '</div>';
+    }).join("");
+    return '<section class="dossier" aria-label="Repository metadata">' +
+      '<h2 class="dossier-title">Repository</h2>' +
+      '<dl class="dossier-grid">' + rows + '</dl>' +
+    '</section>';
+  }
 
-      document.title = currentReport.project + " — Signal / Noise";
-      render();
+  function renderReadme(d) {
+    if (!("readme" in d)) return "";
+    var inner;
+    if (d.readme && d.readme.excerpt) {
+      inner = '<pre class="readme-excerpt">' + esc(d.readme.excerpt) + '</pre>' +
+        '<a class="source-link" href="' + esc(d.readme.url) + '" target="_blank" rel="noopener noreferrer">Read full README on GitHub ↗</a>';
+    } else {
+      inner = '<p class="readme-missing">No README reported by GitHub for this repository.</p>';
+    }
+    return '<section class="readme-block" aria-label="README">' +
+      '<h2 class="dossier-title">README</h2>' + inner +
+    '</section>';
+  }
+
+  function bindFindingEvents() {
+    document.querySelectorAll(".finding-head").forEach(function (head) {
+      head.addEventListener("click", function () { toggleFinding(head); });
+      head.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFinding(head); }
+      });
+    });
+  }
+
+  function renderSummary(c) {
+    return (
+      '<section class="report-summary" aria-label="Findings summary">' +
+        '<p class="summary-title">Findings in this report</p>' +
+        '<div class="summary-grid">' +
+          summaryCell("signal", c.signal) +
+          summaryCell("noise", c.noise) +
+          summaryCell("unknown", c.unknown) +
+        '</div>' +
+      '</section>'
+    );
+  }
+
+  function summaryCell(bucket, n) {
+    return (
+      '<div class="summary-cell summary-' + bucket + '">' +
+        '<span class="summary-label">' + BUCKET_META[bucket].label + '</span>' +
+        '<span class="summary-count">' + String(n).padStart(2, "0") + '</span>' +
+      '</div>'
+    );
+  }
+
+  function renderFilters(c) {
+    var total = c.signal + c.noise + c.unknown;
+    return (
+      '<div class="report-filters" role="group" aria-label="Filter findings">' +
+        filterBtn("all", "All", total) +
+        filterBtn("signal", "Signal", c.signal) +
+        filterBtn("noise", "Noise", c.noise) +
+        filterBtn("unknown", "Unknown", c.unknown) +
+      '</div>'
+    );
+  }
+
+  function filterBtn(key, label, n) {
+    var active = activeFilter === key ? " is-active" : "";
+    return (
+      '<button type="button" class="filter-btn' + active + '" data-filter="' + key + '" aria-pressed="' + (activeFilter === key) + '">' +
+        label + ' <span class="filter-count">' + String(n).padStart(2, "0") + '</span>' +
+      '</button>'
+    );
+  }
+
+  function renderFindings() {
+    var html = "";
+    BUCKETS.forEach(function (bucket) {
+      if (activeFilter !== "all" && activeFilter !== bucket) return;
+      var items = byBucket(bucket);
+      html +=
+        '<section class="bucket bucket-' + bucket + '">' +
+          '<header class="bucket-head">' +
+            '<h2 class="bucket-title">' + BUCKET_META[bucket].label + '</h2>' +
+            '<p class="bucket-desc">' + BUCKET_META[bucket].desc + '</p>' +
+          '</header>' +
+          (items.length ? items.map(function (f, i) { return findingCard(f, i, bucket); }).join("") : emptyState(bucket)) +
+        '</section>';
+    });
+    return html;
+  }
+
+  function emptyState(bucket) {
+    var msg = {
+      signal: "No verified findings were established from the current sources.",
+      noise: "No unsupported claims identified from the current sources.",
+      unknown: "Nothing is currently marked as unknown."
+    }[bucket];
+    return '<p class="bucket-empty">' + msg + '</p>';
+  }
+
+  function findingCard(f, i, bucket) {
+    var bodyId = "f-" + bucket + "-" + i;
+    var hasSources = f.sources && f.sources.length > 0;
+    return (
+      '<article class="finding" data-expanded="false">' +
+        '<button type="button" class="finding-head" aria-expanded="false" aria-controls="' + bodyId + '">' +
+          '<span class="finding-marker" aria-hidden="true"></span>' +
+          '<span class="finding-text">' +
+            '<span class="finding-title">' + esc(f.title) + '</span>' +
+            '<span class="finding-body">' + esc(f.body) + '</span>' +
+            '<span class="finding-source-count">' +
+              (hasSources ? f.sources.length + (f.sources.length === 1 ? " source" : " sources") : "No supporting source") +
+            '</span>' +
+          '</span>' +
+          '<span class="finding-toggle" aria-hidden="true">+</span>' +
+        '</button>' +
+        '<div class="finding-detail" id="' + bodyId + '" hidden>' +
+          (hasSources ? sourcesBlock(f.sources) : '<p class="no-source">No supporting source is attached to this finding.</p>') +
+        '</div>' +
+      '</article>'
+    );
+  }
+
+  function sourcesBlock(sources) {
+    return (
+      '<div class="sources">' +
+        '<p class="sources-title">Sources</p>' +
+        sources.map(function (s) {
+          return (
+            '<div class="source">' +
+              '<p class="source-line">' +
+                '<span class="source-name">' + esc(s.name) + '</span>' +
+                '<span class="source-meta"> · ' + esc(s.label || "") + (s.date || s.checked ? " · " + esc(formatChecked(s.checked) || s.date || "") : "") + '</span>' +
+              '</p>' +
+              (s.detail ? '<p class="source-detail">' + esc(s.detail) + '</p>' : '') +
+              (s.url
+                ? '<a class="source-link" href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">Open source ↗</a>'
+                : '<p class="source-nolink">Demo source — no link available</p>') +
+            '</div>'
+          );
+        }).join("") +
+      '</div>'
+    );
+  }
+
+  function toggleFinding(head) {
+    var card = head.closest(".finding");
+    var detail = card.querySelector(".finding-detail");
+    var tog = head.querySelector(".finding-toggle");
+    var expanded = card.getAttribute("data-expanded") === "true";
+    card.setAttribute("data-expanded", String(!expanded));
+    head.setAttribute("aria-expanded", String(!expanded));
+    detail.hidden = expanded;
+    if (tog) tog.textContent = expanded ? "+" : "−";
+  }
+
+  function renderError(message) {
+    root.innerHTML =
+      '<p class="report-notice report-notice-error">&gt; ' + esc(message) + '</p>' +
+      '<a class="btn btn-ghost report-error-back" href="research.html">&larr; Back to research</a>';
+  }
+
+  /* ------------------------------------------------ init */
+
+  function init() {
+    var report = null;
+    var from = null;
+
+    var errorMessage = null;
+    try { errorMessage = sessionStorage.getItem("sn.error"); } catch (e) {}
+    try { sessionStorage.removeItem("sn.error"); } catch (e) {}
+    if (errorMessage) { renderError(errorMessage); return; }
+
+    /* 1. Live handoff from the research page. */
+    try {
+      var pending = JSON.parse(sessionStorage.getItem("sn.pending") || "null");
+      sessionStorage.removeItem("sn.pending");
+      if (pending && pending.report && Array.isArray(pending.report.findings)) {
+        report = pending.report;
+        from = "session";
+      }
+    } catch (e) {}
+
+    /* 2. Legacy handoff key. */
+    if (!report) {
+      try {
+        var legacy = JSON.parse(sessionStorage.getItem("sn.currentReport") || "null");
+        sessionStorage.removeItem("sn.currentReport");
+        if (legacy && Array.isArray(legacy.findings)) {
+          report = legacy;
+          from = "session";
+        }
+      } catch (e) {}
     }
 
-    init();
-  })();
-  </script>
+    /* 3. Saved report via ?id= */
+    if (!report) {
+      var id = null;
+      try { id = new URLSearchParams(window.location.search).get("id"); } catch (e) {}
+      if (id && window.SNStore) {
+        var saved = SNStore.get(id);
+        if (saved) { report = saved; from = "saved"; }
+      }
+    }
+
+    if (report) {
+      currentReport = normalizeShape(report);
+      currentReport.from = from;
+    } else {
+      currentReport = normalizeShape(DEMO);
+      currentReport.kind = "demo";
+      currentReport.from = "demo";
+    }
+
+    document.title = currentReport.project + " — Signal / Noise";
+    render();
+  }
+
+  init();
+})();
+</script>
+
 </body>
-  </html>
+</html>
