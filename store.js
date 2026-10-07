@@ -37,6 +37,8 @@
       findings: r.findings,
       categories: r.categories || null,
       dossier: r.dossier || null,
+      sources: r.sources || null,
+      homepage: r.homepage || null,
       from: 'saved'
     };
   }
@@ -59,7 +61,9 @@
         checkedAt: report.checkedAt || now,
         findings: report.findings,
         categories: report.categories || null,
-        dossier: report.dossier || null
+        dossier: report.dossier || null,
+        sources: report.sources || null,
+        homepage: report.homepage || null
       };
 
       /* Same URL saved again → update the existing entry. */
