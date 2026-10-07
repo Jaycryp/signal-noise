@@ -1467,3 +1467,112 @@ footer {
 @media (max-width: 720px) {
   .report-head-actions { text-align: left; }
 }
+/* ============ Stage 7: research sources ============ */
+
+.src-section { margin-top: 2.5rem; }
+
+.src-section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  letter-spacing: 0.01em;
+}
+
+.src-block {
+  border: 1px solid #e3e1da;
+  border-radius: 6px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 0.9rem;
+  background: #ffffff;
+}
+
+.src-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.src-name { font-weight: 600; font-size: 0.95rem; }
+
+.src-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.src-status.is-available   { color: #1e6b45; background: #e7f2ec; }
+.src-status.is-not-matched { color: #7a5b12; background: #f5efdc; }
+.src-status.is-unavailable { color: #5d5d58; background: #efeeea; }
+.src-status.is-error       { color: #9c2f26; background: #f7e8e6; }
+.src-status.is-skipped     { color: #5d5d58; background: #efeeea; }
+
+.src-note {
+  font-size: 0.85rem;
+  color: #6a6a64;
+  margin: 0.25rem 0 0.6rem;
+  line-height: 1.5;
+}
+
+.src-cands {
+  margin: 0.4rem 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: #6a6a64;
+}
+
+.src-cands li { margin-bottom: 0.2rem; }
+
+.src-rows {
+  border-top: 1px solid #e3e1da;
+  margin-top: 0.55rem;
+}
+
+.src-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid #e3e1da;
+  font-size: 0.86rem;
+}
+
+.src-label { color: #6a6a64; flex-shrink: 0; }
+
+.src-value {
+  text-align: right;
+  word-break: break-word;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+}
+
+a.src-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+.src-foot {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+  color: #6a6a64;
+}
+
+.src-foot a { color: inherit; }
+
+.load-sources {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.load-src { padding: 0.15rem 0; color: #6a6a64; }
+.load-src[data-state="done"]  { color: #1e6b45; }
+.load-src[data-state="error"] { color: #9c2f26; }
+
+@media (max-width: 560px) {
+  .src-row { flex-direction: column; gap: 0.15rem; }
+  .src-value { text-align: left; }
+}
