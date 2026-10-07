@@ -8,14 +8,6 @@
      note, rows[], candidates[], fieldsUnavailable[], error }
 
    status: available | not-matched | unavailable | error | skipped
-   rows[]: { label, value, href? }
-
-   Principles enforced here:
-   - Observation is not interpretation. No legitimacy verdicts.
-   - CoinGecko data attaches only when identification is
-     verified by cross-reference OR an exact high-confidence
-     name match. Otherwise: "CoinGecko match not established."
-   - One failed adapter never breaks the others.
    ============================================================ */
 
 window.SNWebSources = (function () {
@@ -30,14 +22,23 @@ window.SNWebSources = (function () {
     'security', 'customer-stories', 'readme', 'sponsors'
   ];
 
+  /* Common second-level TLDs for registrable-domain reduction. */
+  var COMMON_SLD = [
+    'co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'com.au', 'net.au', 'org.au',
+    'co.jp', 'com.br', 'com.cn', 'co.in', 'co.nz', 'com.sg', 'com.mx',
+    'com.tr', 'co.za', 'com.hk', 'com.tw', 'com.ar', 'co.kr'
+  ];
+
   /* Fallback map if the IANA bootstrap file is unreachable. */
   var FALLBACK_RDAP = {
     com: 'https://rdap.verisign.com/com/v1/',
     net: 'https://rdap.verisign.com/net/v1/',
     org: 'https://rdap.publicinterestregistry.org/rdap/',
     io:  'https://rdap.identitydigital.services/rdap/',
+    network: 'https://rdap.identitydigital.services/rdap/',
     info:'https://rdap.afilias.net/rdap/info/',
     biz: 'https://rdap.afilias.net/rdap/biz/',
+    pro: 'https://rdap.afilias.net/rdap/pro/',
     co:  'https://rdap.nic.co/',
     me:  'https://rdap.nic.me/',
     dev: 'https://rdap.nic.google/',
@@ -55,9 +56,9 @@ window.SNWebSources = (function () {
 
   /* ---------------- shared helpers ---------------- */
 
-  function fetchJson(url) {
+  function fetchJson(url, timeoutMs) {
     var controller = new AbortController();
-    var timer = setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT);
+    var timer = setTimeout(function () { controller.abort(); }, timeoutMs || FETCH_TIMEOUT);
     return fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } })
       .then(function (resp) {
         clearTimeout(timer);
@@ -71,6 +72,39 @@ window.SNWebSources = (function () {
         });
       })
       .catch(function (e) { clearTimeout(timer); throw e; });
+  }
+
+  /* JSONP transport — bypasses CORS for endpoints that support
+     a callback parameter (the Wayback availability API does).
+     Used only as a fallback after a normal fetch fails. */
+  function jsonp(url, timeoutMs) {
+    return new Promise(function (resolve, reject) {
+      var cbName = 'snwbp' + Math.random().toString(36).slice(2);
+      var script = document.createElement('script');
+      var timer = setTimeout(function () {
+        cleanup();
+        var err = new Error('timeout');
+        err.name = 'AbortError';
+        reject(err);
+      }, timeoutMs || 20000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cbName] = function (data) { cleanup(); resolve(data); };
+      script.onerror = function () { cleanup(); reject(new Error('jsonp failed')); };
+      script.src = url + (url.indexOf('?') === -1 ? '?' : '&') + 'callback=' + cbName;
+      document.head.appendChild(script);
+    });
+  }
+
+  /* Tells the user WHAT failed without needing a console:
+     timeout vs HTTP status vs blocked/unreachable (CORS-style). */
+  function describeFailure(e, host) {
+    if (e && e.name === 'AbortError') return 'Request to ' + host + ' timed out.';
+    if (e && e.status) return host + ' responded with HTTP ' + e.status + '.';
+    return 'Request to ' + host + ' was blocked or unreachable (browser security policy or network).';
   }
 
   function attempt(promise) {
@@ -102,6 +136,10 @@ window.SNWebSources = (function () {
     return { coingecko: 'CoinGecko', rdap: 'Domain / RDAP', wayback: 'Web history / Wayback' }[key] || key;
   }
 
+  function hostOf(u) {
+    try { return new URL(u).hostname; } catch (e) { return u; }
+  }
+
   function normalizeDomain(input) {
     if (!input) return null;
     var s = String(input).trim();
@@ -113,9 +151,19 @@ window.SNWebSources = (function () {
     } catch (e) { return null; }
   }
 
-  /* Find the project's official website from whatever the
-     Stage 6 engine already put on the report (homepage field
-     or the dossier "Website" row). Read-only, never guesses. */
+  /* RDAP only answers for the registered domain, so a subdomain
+     like app.example.network must be reduced to example.network. */
+  function registrableDomain(host) {
+    if (!host) return null;
+    var parts = host.split('.').filter(Boolean);
+    if (parts.length <= 2) return host;
+    var last2 = parts.slice(-2).join('.');
+    if (COMMON_SLD.indexOf(last2) !== -1 && parts.length >= 3) {
+      return parts.slice(-3).join('.');
+    }
+    return last2;
+  }
+
   function homepageFromReport(report) {
     if (!report) return null;
     if (report.homepage) return normalizeDomain(report.homepage);
@@ -202,13 +250,7 @@ window.SNWebSources = (function () {
   }
 
   /* ============================================================
-     1. COINGECKO
-     Identification tiers:
-       verified  — CoinGecko's own links cross-reference the
-                   researched repository or domain.
-       name-only — exact name/id match AND market-cap rank
-                   within the trusted band. Caveat displayed.
-       otherwise — "CoinGecko match not established."
+     1. COINGECKO — unchanged identification tiers
      ============================================================ */
 
   function cgSearch(query) {
@@ -256,7 +298,7 @@ window.SNWebSources = (function () {
     if (err && err.status === 429) {
       return 'CoinGecko rate limit reached. Wait about a minute, then run the research again.';
     }
-    return 'CoinGecko request failed. Other sources are unaffected.';
+    return describeFailure(err, 'api.coingecko.com') + ' Other sources are unaffected.';
   }
 
   function researchCoinGecko(ctx) {
@@ -405,10 +447,7 @@ window.SNWebSources = (function () {
   }
 
   /* ============================================================
-     2. DOMAIN / RDAP
-     Authoritative server resolved via the IANA bootstrap
-     registry (cached per session) with a static fallback map.
-     Registrant data is never displayed.
+     2. DOMAIN / RDAP — registrable domain + failure detail
      ============================================================ */
 
   function rdapBaseFor(tld) {
@@ -489,22 +528,26 @@ window.SNWebSources = (function () {
       return Promise.resolve(res);
     }
 
-    var domain = ctx.domain;
-    var tld = domain.split('.').pop();
+    var regDomain = registrableDomain(ctx.domain) || ctx.domain;
+    var tld = regDomain.split('.').pop();
+    var subNote = (regDomain !== ctx.domain)
+      ? 'Subdomain entered — registrable domain "' + regDomain + '" was checked.'
+      : null;
 
     return rdapBaseFor(tld).then(function (base) {
       var attempts = [];
-      if (base) attempts.push(base + 'domain/' + domain);
-      attempts.push('https://rdap.org/domain/' + domain);
+      if (base) attempts.push(base + 'domain/' + regDomain);
+      attempts.push('https://rdap.org/domain/' + regDomain);
 
       function tryNext(i, lastErr) {
         if (i >= attempts.length) {
           if (lastErr && lastErr.status === 404) {
             res.status = 'unavailable';
-            res.note = 'RDAP data unavailable for this domain.';
+            res.note = (subNote ? subNote + ' ' : '') + 'RDAP data unavailable for this domain.';
           } else {
             res.status = 'error';
-            res.error = 'RDAP request failed. Other sources are unaffected.';
+            res.error = describeFailure(lastErr, hostOf(attempts[attempts.length - 1])) +
+              ' Other sources are unaffected.';
             res.note = res.error;
           }
           return res;
@@ -512,6 +555,7 @@ window.SNWebSources = (function () {
         return fetchJson(attempts[i]).then(function (r) {
           res.status = 'available';
           parseRdap(res, r.data, r.finalUrl);
+          if (subNote) res.note = subNote;
           return res;
         }).catch(function (e) { return tryNext(i + 1, e); });
       }
@@ -520,24 +564,30 @@ window.SNWebSources = (function () {
   }
 
   /* ============================================================
-     3. WAYBACK MACHINE
-     Two lightweight availability lookups (earliest + latest).
-     No crawling. Absence of captures is stated, not interpreted.
+     3. WAYBACK — JSONP fallback when plain fetch is blocked
      ============================================================ */
 
-  function wbAvailable(domain, timestamp) {
+  function wbParse(data, domain) {
+    var s = data && data.archived_snapshots && data.archived_snapshots.closest;
+    if (s && s.available && s.timestamp) {
+      var link = s.url
+        ? String(s.url).replace(/^http:\/\//, 'https://')
+        : 'https://web.archive.org/web/' + s.timestamp + '/' + domain;
+      return { timestamp: s.timestamp, url: link };
+    }
+    return null;
+  }
+
+  function wbFetch(domain, timestamp) {
     var url = 'https://archive.org/wayback/available?url=' + encodeURIComponent(domain) +
       (timestamp ? '&timestamp=' + timestamp : '');
-    return fetchJson(url).then(function (r) {
-      var s = r.data && r.data.archived_snapshots && r.data.archived_snapshots.closest;
-      if (s && s.available && s.timestamp) {
-        var link = s.url
-          ? String(s.url).replace(/^http:\/\//, 'https://')
-          : 'https://web.archive.org/web/' + s.timestamp + '/' + domain;
-        return { timestamp: s.timestamp, url: link };
-      }
-      return null;
-    });
+    return fetchJson(url, 15000)
+      .then(function (r) { return wbParse(r.data, domain); })
+      .catch(function (e1) {
+        return jsonp(url, 20000)
+          .then(function (data) { return wbParse(data, domain); })
+          .catch(function () { throw e1; });
+      });
   }
 
   function fmtWbTs(ts) {
@@ -558,15 +608,15 @@ window.SNWebSources = (function () {
     res.sourceUrl = 'https://web.archive.org/web/*/' + domain;
 
     return Promise.all([
-      attempt(wbAvailable(domain, '1995')),
-      attempt(wbAvailable(domain, ''))
+      attempt(wbFetch(domain, '1995')),
+      attempt(wbFetch(domain, ''))
     ]).then(function (results) {
       var first = results[0].v, last = results[1].v;
       var failed = results[0].e && results[1].e;
 
       if (failed) {
         res.status = 'error';
-        res.error = 'Wayback Machine request failed. Other sources are unaffected.';
+        res.error = describeFailure(results[0].e, 'archive.org') + ' Other sources are unaffected.';
         res.note = res.error;
         return res;
       }
@@ -590,7 +640,7 @@ window.SNWebSources = (function () {
   }
 
   /* ============================================================
-     Orchestrator + integration
+     Orchestrator + integration — unchanged
      ============================================================ */
 
   function runAll(ctx, onStatus) {
@@ -613,9 +663,6 @@ window.SNWebSources = (function () {
     })).then(function () { return out; });
   }
 
-  /* One-line integration for the research page:
-       report = await SNWebSources.attach(report, loadSourcesEl);
-     Mutates report.sources and returns the report. Never throws. */
   function attach(report, statusEl) {
     var cb = null;
     if (statusEl) {
@@ -648,9 +695,7 @@ window.SNWebSources = (function () {
   }
 
   /* ============================================================
-     Report rendering — builds the SOURCES section.
-     Returns null for reports without Stage 7 data (demo, older
-     saves) so those pages render exactly as before.
+     Report rendering — unchanged
      ============================================================ */
 
   var STATUS_TEXT = {
@@ -734,8 +779,6 @@ window.SNWebSources = (function () {
     section.setAttribute('aria-label', 'Research sources');
     section.appendChild(el('h2', 'src-section-title', 'Sources'));
 
-    /* GitHub status line — the GitHub adapter itself stays
-       exactly where it is (Stage 6); this reflects its state. */
     var isGithub = report.kind === 'github' || /github\.com/i.test(report.url || '');
     var hasGhData = !!(report.dossier &&
       ((Array.isArray(report.dossier.rows) && report.dossier.rows.length) || report.dossier.readme));
