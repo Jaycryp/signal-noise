@@ -1467,7 +1467,7 @@ footer {
 @media (max-width: 720px) {
   .report-head-actions { text-align: left; }
 }
-/* ============ Stage 7: research sources ============ */
+/* ============ Stage 7: research sources (dark) ============ */
 
 .src-section { margin-top: 2.5rem; }
 
@@ -1476,14 +1476,15 @@ footer {
   font-weight: 600;
   margin: 0 0 1rem;
   letter-spacing: 0.01em;
+  color: #f2f1ec;
 }
 
 .src-block {
-  border: 1px solid #e3e1da;
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 6px;
   padding: 1rem 1.1rem;
   margin-bottom: 0.9rem;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .src-head {
@@ -1494,7 +1495,7 @@ footer {
   margin-bottom: 0.35rem;
 }
 
-.src-name { font-weight: 600; font-size: 0.95rem; }
+.src-name { font-weight: 600; font-size: 0.95rem; color: #f2f1ec; }
 
 .src-status {
   font-size: 0.72rem;
@@ -1506,15 +1507,15 @@ footer {
   white-space: nowrap;
 }
 
-.src-status.is-available   { color: #1e6b45; background: #e7f2ec; }
-.src-status.is-not-matched { color: #7a5b12; background: #f5efdc; }
-.src-status.is-unavailable { color: #5d5d58; background: #efeeea; }
-.src-status.is-error       { color: #9c2f26; background: #f7e8e6; }
-.src-status.is-skipped     { color: #5d5d58; background: #efeeea; }
+.src-status.is-available   { color: #7fd6ab; background: rgba(72, 187, 120, 0.14); }
+.src-status.is-not-matched { color: #e3c567; background: rgba(214, 178, 74, 0.14); }
+.src-status.is-unavailable { color: #a3a39b; background: rgba(255, 255, 255, 0.07); }
+.src-status.is-error       { color: #f08a7e; background: rgba(224, 90, 74, 0.14); }
+.src-status.is-skipped     { color: #a3a39b; background: rgba(255, 255, 255, 0.07); }
 
 .src-note {
   font-size: 0.85rem;
-  color: #6a6a64;
+  color: #a3a39b;
   margin: 0.25rem 0 0.6rem;
   line-height: 1.5;
 }
@@ -1523,13 +1524,13 @@ footer {
   margin: 0.4rem 0;
   padding-left: 1.1rem;
   font-size: 0.84rem;
-  color: #6a6a64;
+  color: #a3a39b;
 }
 
 .src-cands li { margin-bottom: 0.2rem; }
 
 .src-rows {
-  border-top: 1px solid #e3e1da;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   margin-top: 0.55rem;
 }
 
@@ -1538,25 +1539,26 @@ footer {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.42rem 0;
-  border-bottom: 1px solid #e3e1da;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 0.86rem;
 }
 
-.src-label { color: #6a6a64; flex-shrink: 0; }
+.src-label { color: #8b8b84; flex-shrink: 0; }
 
 .src-value {
   text-align: right;
   word-break: break-word;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.82rem;
+  color: #e8e7e1;
 }
 
-a.src-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+a.src-link { color: #e8e7e1; text-decoration: underline; text-underline-offset: 2px; }
 
 .src-foot {
   margin: 0.65rem 0 0;
   font-size: 0.78rem;
-  color: #6a6a64;
+  color: #7d7d77;
 }
 
 .src-foot a { color: inherit; }
@@ -1568,9 +1570,9 @@ a.src-link { color: inherit; text-decoration: underline; text-underline-offset: 
   font-size: 0.85rem;
 }
 
-.load-src { padding: 0.15rem 0; color: #6a6a64; }
-.load-src[data-state="done"]  { color: #1e6b45; }
-.load-src[data-state="error"] { color: #9c2f26; }
+.load-src { padding: 0.15rem 0; color: #a3a39b; }
+.load-src[data-state="done"]  { color: #7fd6ab; }
+.load-src[data-state="error"] { color: #f08a7e; }
 
 @media (max-width: 560px) {
   .src-row { flex-direction: column; gap: 0.15rem; }
