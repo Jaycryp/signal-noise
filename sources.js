@@ -140,6 +140,11 @@ const SN_SOURCES = (() => {
     }, extra || {});
     const na = "Not available from GitHub";
 
+    /* Stage 7: the repository's own homepage link (GitHub metadata,
+       owner-provided) — passed through so RDAP / Wayback can check it. */
+    const homepage = (repo.homepage && String(repo.homepage).trim())
+      ? String(repo.homepage).trim() : null;
+
     const findings = [];
     const add = (bucket, title, body, sources) =>
       findings.push({ bucket, title, body, sources: sources || [] });
@@ -252,6 +257,7 @@ const SN_SOURCES = (() => {
       rows: [
         ["Owner", (repo.owner && repo.owner.login) || na],
         ["Visibility", repo.visibility || na],
+        ["Website", homepage || na],
         ["Created", formatDate(repo.created_at) || na],
         ["Last updated", formatDate(repo.updated_at) || na],
         ["Last push", formatDate(repo.pushed_at) || na],
@@ -280,6 +286,7 @@ const SN_SOURCES = (() => {
       project, url: normalizedUrl,
       sourceLabel: "Live research · GitHub",
       checkedAt: new Date().toISOString(),
+      homepage: homepage,
       findings, dossier
     };
   }
@@ -335,11 +342,11 @@ const SN_SOURCES = (() => {
           body: "A research record was opened for " + host + ".",
           sources: [{ name: host, label: "User-submitted URL",
                       url: normalizedUrl, checked: new Date().toISOString(),
-                      detail: "The submitted URL was recorded. No external sources have been queried for this URL type." }] },
+                      detail: "The submitted URL was recorded. External source checks are shown in the Sources section of this report." }] },
         { bucket: "unknown", title: "Source coverage",
           body: isGithub
             ? "This GitHub URL points to a profile or page, not a repository. Provide a repository URL (github.com/owner/repository) to retrieve public repository data."
-            : "Automated source discovery for this URL is not available yet.",
+            : "Source coverage for this URL is limited to the checks shown in the Sources section of this report.",
           sources: [] },
         { bucket: "unknown", title: "Team information",
           body: "No team information has been established by the current data sources.", sources: [] },
