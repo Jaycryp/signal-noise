@@ -43,6 +43,7 @@
 </footer>
 
 <script src="store.js"></script>
+<script src="web-sources.js"></script>
 <script>
 (function () {
   "use strict";
@@ -129,6 +130,8 @@
       checkedAt: r.checkedAt || r.savedAt || null,
       findings: Array.isArray(r.findings) ? r.findings : [],
       dossier: r.dossier || null,
+      sources: r.sources || null,
+      homepage: r.homepage || null,
       from: r.from || null
     };
   }
@@ -203,6 +206,15 @@
       '<div id="findings-root">' + renderFindings() + '</div>';
 
     root.innerHTML = html;
+
+    /* Stage 7: append the multi-source evidence section.
+       Returns null for demo + pre-Stage-7 saves, which then
+       render exactly as they always have. */
+    if (window.SNWebSources && SNWebSources.renderSourcesSection) {
+      var srcSec = SNWebSources.renderSourcesSection(currentReport);
+      if (srcSec) root.appendChild(srcSec);
+    }
+
     bindFindingEvents();
 
     document.querySelectorAll(".filter-btn").forEach(function (btn) {
