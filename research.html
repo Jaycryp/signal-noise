@@ -49,6 +49,8 @@
     <p class="field-message error" id="inputError" hidden></p>
   </form>
 
+  <ul id="loadSources" class="load-sources" aria-live="polite"></ul>
+
   <p class="demo-link-line">
     No project in mind? <a href="report.html">View the demo report</a>.
   </p>
@@ -63,6 +65,7 @@
 </footer>
 
 <script src="sources.js"></script>
+<script src="web-sources.js"></script>
 <script>
   (function () {
     'use strict';
@@ -72,6 +75,7 @@
     var hint  = document.getElementById('inputHint');
     var error = document.getElementById('inputError');
     var btn   = form.querySelector('button');
+    var loadSources = document.getElementById('loadSources');
 
     function detectType(v) {
       if (!v) return 'empty';
@@ -97,7 +101,7 @@
       hint.className = 'field-message';
 
       if (type === 'github_repo') {
-        hint.textContent = '> GitHub repository detected — public data will be retrieved from the GitHub API.';
+        hint.textContent = '> GitHub repository detected — GitHub data will be retrieved, then cross-checked against CoinGecko, domain and web-history sources.';
         hint.className = 'field-message ok';
         hint.hidden = false;
         input.classList.add('valid');
@@ -105,7 +109,7 @@
         hint.textContent = '> That looks like a GitHub page, not a repository. A basic research record will be created.';
         hint.hidden = false;
       } else if (type === 'website') {
-        hint.textContent = '> A basic research record will be created. Automated source discovery for this URL type is not available yet.';
+        hint.textContent = '> Website detected — CoinGecko, domain records (RDAP) and web history (Wayback) will be checked.';
         hint.hidden = false;
       } else {
         hint.hidden = true;
@@ -135,12 +139,21 @@
       error.hidden = true;
       hint.hidden = true;
       input.classList.remove('invalid');
+      loadSources.innerHTML = '';
       btn.textContent = 'Researching…';
       btn.disabled = true;
       input.disabled = true;
 
       try {
         var report = await SN_SOURCES.research(v);
+
+        /* Stage 7: attach CoinGecko + RDAP + Wayback evidence.
+           Never throws — a failed source degrades to a status. */
+        if (window.SNWebSources && SNWebSources.attach) {
+          btn.textContent = 'Checking sources…';
+          report = await SNWebSources.attach(report, loadSources);
+        }
+
         var key = 'k' + Date.now().toString(36);
         try {
           sessionStorage.setItem('sn.pending', JSON.stringify({ key: key, report: report }));
@@ -155,7 +168,7 @@
       }
     });
   })();
-      </script>
+</script>
 
 </body>
 </html>
