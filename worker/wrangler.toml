@@ -1,0 +1,21 @@
+name = "signal-noise-fetch"
+main = "src/index.js"
+compatibility_date = "2024-09-25"
+
+# Comma-separated allowlist of frontend origins.
+# PRODUCTION: only your real deployed origin. LOCAL DEV: temporarily add
+# "http://localhost:8000" (your dev server port), remove before production use.
+[vars]
+ALLOWED_ORIGINS = "https://signal-noise.netlify.app"
+
+# Workers rate-limiting binding (30 req / 60s per origin).
+# If your wrangler version rejects [[ratelimits]], use instead:
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1001"
+# simple = { limit = 30, period = 60 }
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }
