@@ -44,6 +44,8 @@
 
 <script src="store.js"></script>
 <script src="web-sources.js"></script>
+<!-- Stage 8: website claims renderer (renders from report data only — never calls the worker) -->
+<script src="claims.js"></script>
 <script>
 (function () {
   "use strict";
@@ -131,6 +133,7 @@
       findings: Array.isArray(r.findings) ? r.findings : [],
       dossier: r.dossier || null,
       sources: r.sources || null,
+      claims: r.claims || null,  /* Stage 8: pass claims through; null for demo + pre-Stage-8 saves */
       homepage: r.homepage || null,
       from: r.from || null
     };
@@ -206,6 +209,15 @@
       '<div id="findings-root">' + renderFindings() + '</div>';
 
     root.innerHTML = html;
+
+    /* Stage 8: append the website claims section.
+       Renders from report.claims (live session or saved) — no worker request
+       is ever made from the report page. Returns null for demo + pre-Stage-8
+       saves, which then render exactly as they always have. */
+    if (window.SNClaims && SNClaims.renderClaimsSection) {
+      var claimsSec = SNClaims.renderClaimsSection(currentReport);
+      if (claimsSec) root.appendChild(claimsSec);
+    }
 
     /* Stage 7: append the multi-source evidence section.
        Returns null for demo + pre-Stage-7 saves, which then
