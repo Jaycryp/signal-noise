@@ -114,7 +114,7 @@
   function splitSentences(text) {
     var out = [];
     String(text || '').split(/\n+/).forEach(function (line) {
-      line.replace(/([.!?])\s+/g, '$1').split('')
+      line.replace(/([.!?])\s+/g, '$1').split(/[\n]+/)
         .map(function (s) { return s.replace(/\s+/g, ' ').trim(); })
         .forEach(function (s) {
           if (s.length >= MIN_SENTENCE && s.length <= MAX_SENTENCE) out.push(s);
