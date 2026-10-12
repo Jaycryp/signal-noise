@@ -38,6 +38,7 @@
       categories: r.categories || null,
       dossier: r.dossier || null,
       sources: r.sources || null,
+      claims: r.claims || null,  /* Stage 8: website claims; absent in pre-Stage-8 saves → null → section hidden */
       homepage: r.homepage || null,
       from: 'saved'
     };
@@ -63,6 +64,7 @@
         categories: report.categories || null,
         dossier: report.dossier || null,
         sources: report.sources || null,
+        claims: report.claims || null,  /* Stage 8: persist claims with the saved entry */
         homepage: report.homepage || null
       };
 
